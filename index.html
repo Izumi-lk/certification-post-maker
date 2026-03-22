@@ -8,13 +8,13 @@
   <title>スミン認証メーカー</title>
   <link rel="apple-touch-icon" href="https://drive.google.com/uc?id=1w98S6r5557INAW5JFjoWa3ccbuUfExHH&.png">
   <link rel="icon" href="https://script.google.com/macros/s/AKfycbzts6i6DzuBMAbn5Sj6h7MnpPQJUCNwbi9zI0ttXHwm/dev">
-  <?!= include('style'); ?>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="wrap">
     <div class="title">スミン認証メーカー</div>
     <div class="sub">
-      4枚のスクショをまとめて加工／MV投稿用・音源投稿用の投稿文コピー・返信先オープン
+      4枚のスクショをまとめて加工／MV投稿用・音源投稿用の投稿文コピー・新しいポストを開く
     </div>
 
     <!-- 1. 共通設定 -->
@@ -45,16 +45,12 @@
 
       <div class="field">
         <label class="label" for="mvPostText">MV投稿文プレビュー</label>
-        <div class="hint">現在時刻から自動生成されます。形式：1/2 2pm</div>
+        <div class="hint">現在時刻から自動生成されます。形式：1/22 5pm</div>
         <textarea id="mvPostText">#내가_살아있다는_증거_MV_스트리밍</textarea>
       </div>
 
-      <div class="field">
-        <label class="label" for="mvPostIdInput">MV返信先投稿ID</label>
-        <input type="text" id="mvPostIdInput" placeholder="例: 2029738614851260425" />
-      </div>
-        <a id="mvActionLink" class="btn secondary link-btn" href="#" target="_top" rel="noopener">
-          投稿文をコピーして返信先を開く
+        <a id="mvActionLink" class="btn secondary link-btn" href="#" target="_blank" rel="noopener">
+          投稿文をコピーして新しいポストを開く
         </a>
     </div>
 
@@ -64,16 +60,12 @@
 
       <div class="field">
         <label class="label" for="stPostText">音源投稿文プレビュー</label>
-        <div class="hint">現在時刻から自動生成されます。形式：1/2 2pm</div>
+        <div class="hint">現在時刻から自動生成されます。形式：1/22 5pm</div>
         <textarea id="stPostText">#내가_살아있다는_증거_음원_스트리밍</textarea>
       </div>
 
-      <div class="field">
-        <label class="label" for="stPostIdInput">音源返信先投稿ID</label>
-        <input type="text" id="stPostIdInput" placeholder="例: 2029738614851260425" />
-      </div>
-        <a id="stActionLink" class="btn secondary link-btn" href="#" target="_top" rel="noopener">
-          投稿文をコピーして返信先を開く
+        <a id="stActionLink" class="btn secondary link-btn" href="#" target="_blank" rel="noopener">
+          投稿文をコピーして新しいポストを開く
         </a>
     </div>
 
@@ -93,6 +85,6 @@
       </div>
     </div>
   </div>
-  <?!= include('script'); ?>
+  <script src="script.js" defer></script>
 </body>
 </html>

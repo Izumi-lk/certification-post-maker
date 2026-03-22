@@ -1,8 +1,5 @@
-/* GAS適用時は全体を<script>で囲む */
 const DEFAULTS = {
-  xId: '@inu_5122',
-  mvPostId: '',
-  stPostId: ''
+  xId: '@inu_5122'
 };
 
 const MV_HASHTAG = '#내가_살아있다는_증거_MV_스트리밍';
@@ -48,33 +45,29 @@ const els = {
   shareAllBtn: document.getElementById('shareAllBtn'),
 
   mvPostText: document.getElementById('mvPostText'),
-  mvPostIdInput: document.getElementById('mvPostIdInput'),
   mvActionLink: document.getElementById('mvActionLink'),
-  //mvActionStatus: document.getElementById('mvActionStatus'),
+  mvActionStatus: document.getElementById('mvActionStatus'),
 
   stPostText: document.getElementById('stPostText'),
-  stPostIdInput: document.getElementById('stPostIdInput'),
   stActionLink: document.getElementById('stActionLink'),
-  //stActionStatus: document.getElementById('stActionStatus'),
+  stActionStatus: document.getElementById('stActionStatus'),
 
   mvPreviewGrid: document.getElementById('mvPreviewGrid'),
   stPreviewGrid: document.getElementById('stPreviewGrid'),
 
   generateStatus: document.getElementById('generateStatus'),
   resultStatus: document.getElementById('resultStatus'),
-  //settingsStatus: document.getElementById('settingsStatus')
+  settingsStatus: document.getElementById('settingsStatus'),
 };
 
 function saveSettings() {
   const settings = {
-    xId: (els.xIdInput.value || '').trim() || DEFAULTS.xId,
-    mvPostId: (els.mvPostIdInput.value || '').trim(),
-    stPostId: (els.stPostIdInput.value || '').trim()
+    xId: (els.xIdInput.value || '').trim() || DEFAULTS.xId
   };
 
   localStorage.setItem('mv_helper_settings', JSON.stringify(settings));
   refreshPostTexts();
-  updateReplyLinks();
+  updatePostLinks();
   els.settingsStatus.innerHTML = '<span class="ok">設定を保存しました。</span>';
 }
 
@@ -88,9 +81,7 @@ function loadSettings() {
 
     const saved = JSON.parse(raw);
     applySettings({
-      xId: saved.xId || DEFAULTS.xId,
-      mvPostId: saved.mvPostId || DEFAULTS.mvPostId,
-      stPostId: saved.stPostId || DEFAULTS.stPostId
+      xId: saved.xId || DEFAULTS.xId
     });
   } catch (e) {
     applySettings(DEFAULTS);
@@ -99,10 +90,8 @@ function loadSettings() {
 
 function applySettings(settings) {
   els.xIdInput.value = settings.xId || DEFAULTS.xId;
-  els.mvPostIdInput.value = settings.mvPostId || DEFAULTS.mvPostId;
-  els.stPostIdInput.value = settings.stPostId || DEFAULTS.stPostId;
   refreshPostTexts();
-  updateReplyLinks();
+  updatePostLinks();
 }
 
 function setStatus(target, text, isError = false) {
@@ -148,49 +137,20 @@ function refreshPostTexts() {
   els.stPostText.value = buildPostText('st');
 }
 
-function loadLatestReplyPostIds() {
-  google.script.run
-    .withSuccessHandler((result) => {
-      if (!result) return;
-
-      if (result.mvPostId) {
-        els.mvPostIdInput.value = result.mvPostId;
-      }
-
-      if (result.stPostId) {
-        els.stPostIdInput.value = result.stPostId;
-      }
-
-      updateReplyLinks();
-      setStatus(els.settingsStatus, 'スプレッドシートから最新の投稿IDを読み込みました。');
-    })
-    .withFailureHandler((error) => {
-      console.error('投稿IDの取得に失敗しました:', error);
-      setStatus(els.settingsStatus, 'スプレッドシートから投稿IDを取得できませんでした。', true);
-    })
-    .getLatestReplyPostIds();
+function buildTweetUrl(text) {
+  return `https://x.com/intent/tweet?text=${encodeURIComponent(text || '')}`;
 }
 
-function buildReplyUrl(postId) {
-  return `https://x.com/inu_5122/status/${encodeURIComponent(postId)}/reply`;
-}
-
-function setActionLink(linkEl, postId) {
-  if (!postId) {
-    linkEl.href = '#';
-    linkEl.style.pointerEvents = 'none';
-    linkEl.style.opacity = '0.5';
-    return;
-  }
-
-  linkEl.href = buildReplyUrl(postId);
+function setActionLink(linkEl, text) {
+  linkEl.href = buildTweetUrl(text);
   linkEl.style.pointerEvents = 'auto';
   linkEl.style.opacity = '1';
 }
 
-function updateReplyLinks() {
-  setActionLink(els.mvActionLink, (els.mvPostIdInput.value || '').trim());
-  setActionLink(els.stActionLink, (els.stPostIdInput.value || '').trim());
+function updatePostLinks() {
+  refreshPostTexts();
+  setActionLink(els.mvActionLink, els.mvPostText.value);
+  setActionLink(els.stActionLink, els.stPostText.value);
 }
 
 function loadImageFromFile(file) {
@@ -472,8 +432,9 @@ async function shareAll() {
 els.generateBtn.addEventListener('click', generateImages);
 els.shareAllBtn.addEventListener('click', shareAll);
 
-els.mvPostIdInput.addEventListener('input', updateReplyLinks);
-els.stPostIdInput.addEventListener('input', updateReplyLinks);
+els.mvPostText.addEventListener('input', updatePostLinks);
+els.stPostText.addEventListener('input', updatePostLinks);
+els.xIdInput.addEventListener('input', saveSettings);
 
 bindCopyAndOpen(els.mvActionLink, copyMvPostText, els.mvActionStatus, 'MV');
 bindCopyAndOpen(els.stActionLink, copyStPostText, els.stActionStatus, '音源');
@@ -481,6 +442,6 @@ bindCopyAndOpen(els.stActionLink, copyStPostText, els.stActionStatus, '音源');
 window.addEventListener('load', () => {
   loadSettings();
   refreshPostTexts();
-  updateReplyLinks();
-  loadLatestReplyPostIds();
+  updatePostLinks();
+  //loadLatestReplyPostIds();
 });
