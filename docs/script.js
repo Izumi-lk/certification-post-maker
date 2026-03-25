@@ -1,24 +1,22 @@
-const DEFAULTS = {
-  xId: '@inu_5122'
+const DEFAULT_PATTERN = {
+  watermarkText: '@inu_5122',
+  fontSize: 32,
+  fontWeight: 800,
+  fontFamily: 'default',
+  textColor: '#ffffff',
+  outlineColor: '#ff2b88',
+  outlineWidth: 2,
+  highlightEnabled: true,
+  highlightColor: '#ffe4f0',
+  highlightPadding: 8,
+  opacity: 85,
+  positionX: 0,
+  positionY: 0,
+  postText: '',
+  includeCurrentTime: true
 };
 
-const MV_HASHTAG = '#내가_살아있다는_증거_MV_스트리밍';
-const AU_HASHTAG = '#내가_살아있다는_증거_음원_스트리밍';
-
-const MV_STYLE = {
-  fontSize: 80,
-  fontWeight: '600',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
-  offsetX: 0,
-  offsetY: -0.21,
-  lineWidth: 26,
-  strokeStyle: '#f7bacf',
-  fillStyle: '#ffffff',
-  shadowColor: 'rgba(0,0,0,0)',
-  shadowBlur: 0
-};
-
-const AU_STYLE = {
+/*const AU_STYLE = {
   fontSize: 80,
   fontWeight: '600',
   fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
@@ -29,35 +27,65 @@ const AU_STYLE = {
   fillStyle: '#ffffff',
   shadowColor: 'rgba(0,0,0,0)',
   shadowBlur: 0
-};
+};*/
 
 const state = {
-  image1: null,
-  image2: null,
-  image3: null,
-  image4: null
+  activePatternId: 1,
+
+  patterns: {
+    1: { ...DEFAULT_PATTERN },
+    2: { ...DEFAULT_PATTERN },
+    3: { ...DEFAULT_PATTERN }
+  },
+
+  drafts: {
+    1: null,
+    2: null,
+    3: null
+  },
+
+  images: [] // 最大4件
 };
 
 const els = {
-  xIdInput: document.getElementById('xIdInput'),
+  imageFiles: document.getElementById('imageFiles'),
+  generateBtn: document.getElementById('generateBtn'),
+  shareAllBtn: document.getElementById('shareAllBtn'),
+  mvActionStatus: document.getElementById('mvActionStatus'),
+  stActionStatus: document.getElementById('stActionStatus'),
+  generateStatus: document.getElementById('generateStatus'),
+  resultStatus: document.getElementById('resultStatus'),
+  settingsStatus: document.getElementById('settingsStatus'),
+
+  //新規追加
+  patternTabs: document.querySelectorAll('.tab'),
+  savePatternBtn: document.getElementById('savePatternBtn'),
+  copyPostBtn: document.getElementById('copyPostBtn'),
+
   imageFiles: document.getElementById('imageFiles'),
   generateBtn: document.getElementById('generateBtn'),
   shareAllBtn: document.getElementById('shareAllBtn'),
 
-  mvPostText: document.getElementById('mvPostText'),
-  mvActionLink: document.getElementById('mvActionLink'),
-  mvActionStatus: document.getElementById('mvActionStatus'),
+  watermarkText: document.getElementById('watermarkText'),
+  fontSizeInput: document.getElementById('fontSizeInput'),
+  fontWeightInput: document.getElementById('fontWeightInput'),
+  fontFamilySelect: document.getElementById('fontFamilySelect'),
+  textColorInput: document.getElementById('textColorInput'),
+  outlineColorInput: document.getElementById('outlineColorInput'),
+  outlineWidthInput: document.getElementById('outlineWidthInput'),
+  highlightEnabledInput: document.getElementById('highlightEnabledInput'),
+  highlightColorInput: document.getElementById('highlightColorInput'),
+  opacityInput: document.getElementById('opacityInput'),
+  positionXInput: document.getElementById('positionXInput'),
+  positionYInput: document.getElementById('positionYInput'),
+  postText: document.getElementById('postText'),
+  includeCurrentTimeInput: document.getElementById('includeCurrentTimeInput'),
 
-  stPostText: document.getElementById('stPostText'),
-  stActionLink: document.getElementById('stActionLink'),
-  stActionStatus: document.getElementById('stActionStatus'),
-
-  mvPreviewGrid: document.getElementById('mvPreviewGrid'),
-  stPreviewGrid: document.getElementById('stPreviewGrid'),
+  previewGrid: document.getElementById('previewGrid'),
 
   generateStatus: document.getElementById('generateStatus'),
   resultStatus: document.getElementById('resultStatus'),
-  settingsStatus: document.getElementById('settingsStatus'),
+  settingsStatus: document.getElementById('settingsStatus')
 };
 
 function saveSettings() {

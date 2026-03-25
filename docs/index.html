@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -10,12 +11,149 @@
   <link rel="icon" href="https://script.google.com/macros/s/AKfycbzts6i6DzuBMAbn5Sj6h7MnpPQJUCNwbi9zI0ttXHwm/dev">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="wrap">
     <div class="title">スミン認証メーカー</div>
     <div class="sub">
-      4枚のスクショをまとめて加工／MV投稿用・音源投稿用の投稿文コピー・新しいポストを開く
+      1〜4枚の画像をまとめて加工。設定パターンを切り替えながら、投稿文コピーと画像保存ができます。
     </div>
+
+    <!-- 設定パターン -->
+    <div class="card">
+      <div class="section-title">設定パターン</div>
+      <div class="pattern-tabs">
+        <button class="tab active" type="button" data-pattern="1">パターン1</button>
+        <button class="tab" type="button" data-pattern="2">パターン2</button>
+        <button class="tab" type="button" data-pattern="3">パターン3</button>
+      </div>
+
+      <button class="btn" id="savePatternBtn" type="button">このパターンを保存</button>
+      <button class="btn secondary" id="copyPostBtn" type="button">投稿文をコピーして新しいポストを開く</button>
+
+      <div class="status" id="settingsStatus"></div>
+    </div>
+
+    <!-- 画像アップロード -->
+    <div class="card">
+      <div class="section-title">画像アップロード</div>
+
+      <div class="field">
+        <label class="label" for="imageFiles">画像アップロード</label>
+        <input type="file" id="imageFiles" accept="image/*" multiple />
+        <div class="hint">1〜4枚まで選択できます。選択したすべての画像に同じ設定を適用します。</div>
+      </div>
+
+      <button class="btn" id="generateBtn" type="button">画像を生成</button>
+
+      <div class="status" id="generateStatus"></div>
+      <div class="status" id="resultStatus"></div>
+    </div>
+
+    <!-- 設定編集 -->
+    <details class="card collapsible-card">
+      <summary class="collapse-summary">
+        <span>設定編集</span>
+        <span class="collapse-hint">必要なときだけ開く</span>
+      </summary>
+
+      <div class="collapse-body">
+        <!-- ウォーターマーク文字 -->
+        <div class="field">
+          <label class="label" for="watermarkText">ウォーターマーク文字（複数行可）</label>
+          <textarea id="watermarkText">@inu_5122</textarea>
+        </div>
+        <!-- 文字デザイン -->
+        <div class="section-title subheading">文字デザイン</div>
+        <div class="row">
+          <div class="field">
+            <label class="label" for="fontSizeInput">文字サイズ</label>
+            <input type="number" id="fontSizeInput" min="1" value="32" />
+          </div>
+          <div class="field">
+            <label class="label" for="fontWeightInput">文字の太さ</label>
+            <input type="number" id="fontWeightInput" min="100" max="900" step="100" value="800" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label class="label" for="textColorInput">文字色</label>
+            <input type="color" id="textColorInput" value="#ffffff" />
+          </div>
+          <div class="field">
+            <label class="label" for="opacityInput">透明度（0〜100）</label>
+            <input type="number" id="opacityInput" min="0" max="100" value="85" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label class="label" for="outlineColorInput">アウトライン色</label>
+            <input type="color" id="outlineColorInput" value="#ff2b88" />
+          </div>
+          <div class="field">
+            <label class="label" for="outlineWidthInput">アウトライン太さ（0でなし）</label>
+            <input type="number" id="outlineWidthInput" min="0" value="2" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="fontFamilySelect">フォント</label>
+          <select id="fontFamilySelect">
+            <option value="default">固定フォント（初期実装）</option>
+          </select>
+        </div>
+        <!-- ハイライト背景帯 -->
+        <div class="section-title subheading">ハイライト背景帯</div>
+
+        <div class="field">
+          <label class="check">
+            <input type="checkbox" id="highlightEnabledInput" checked />
+            ハイライトを表示する
+          </label>
+          <div class="hint">余白量は固定です。</div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label class="label" for="highlightColorInput">ハイライト色</label>
+            <input type="color" id="highlightColorInput" value="#ffe4f0" />
+          </div>
+          <div class="field">
+            <label class="label" for="highlightPaddingInput">背景帯の余白量</label>
+            <input type="number" id="highlightPaddingInput" value="8" disabled />
+          </div>
+        </div>
+        <!-- 位置 -->
+        <div class="section-title subheading">位置</div>
+        <div class="row two-col-mobile">
+          <div class="field">
+            <label class="label" for="positionXInput">X座標（-50〜50）</label>
+            <input type="number" id="positionXInput" min="-50" max="50" value="0" />
+          </div>
+          <div class="field">
+            <label class="label" for="positionYInput">Y座標（-50〜50）</label>
+            <input type="number" id="positionYInput" min="-50" max="50" value="0" />
+          </div>
+        </div>
+        <div class="hint">画像中央を 0,0 とする正規化座標です。</div>
+        <!-- 投稿文 -->
+        <div class="section-title subheading">投稿文</div>
+        <div class="field">
+          <label class="label" for="postText">本文・ハッシュタグ（自由入力）</label>
+          <textarea id="postText">250326 20:30
+#내가_살아있다는_증거_MV_스트리밍 #TUNEXX #김인후</textarea>
+        </div>
+
+        <div class="field">
+          <label class="check">
+            <input type="checkbox" id="includeCurrentTimeInput" checked />
+            現在時刻の自動生成文字列を先頭に含める
+          </label>
+        </div>
+      </div>
+    </details>
 
     <!-- 1. 共通設定 -->
     <div class="card">
@@ -49,9 +187,9 @@
         <textarea id="mvPostText">#내가_살아있다는_증거_MV_스트리밍</textarea>
       </div>
 
-        <a id="mvActionLink" class="btn secondary link-btn" href="#" target="_blank" rel="noopener">
-          投稿文をコピーして新しいポストを開く
-        </a>
+      <a id="mvActionLink" class="btn secondary link-btn" href="#" target="_blank" rel="noopener">
+        投稿文をコピーして新しいポストを開く
+      </a>
     </div>
 
     <!-- 3. 音源投稿設定 -->
@@ -64,9 +202,9 @@
         <textarea id="stPostText">#내가_살아있다는_증거_음원_스트리밍</textarea>
       </div>
 
-        <a id="stActionLink" class="btn secondary link-btn" href="#" target="_blank" rel="noopener">
-          投稿文をコピーして新しいポストを開く
-        </a>
+      <a id="stActionLink" class="btn secondary link-btn" href="#" target="_blank" rel="noopener">
+        投稿文をコピーして新しいポストを開く
+      </a>
     </div>
 
     <!-- 4. MV生成結果 -->
@@ -87,4 +225,5 @@
   </div>
   <script src="script.js" defer></script>
 </body>
+
 </html>

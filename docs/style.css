@@ -29,6 +29,13 @@ body {
   padding: 20px 16px 40px;
 }
 
+/* モバイル優先に変更
+.wrap {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 16px 16px 40px;
+}*/
+
 .title {
   font-size: 24px;
   font-weight: 800;
@@ -77,6 +84,9 @@ body {
 
 input[type="text"],
 input[type="file"],
+input[type="number"],
+input[type="color"],
+select,
 textarea {
   width: 100%;
   font-size: 16px;
@@ -85,6 +95,11 @@ textarea {
   border-radius: 12px;
   background: #fff;
   color: var(--text);
+}
+
+input[type="color"] {
+  padding: 4px;
+  height: 48px;
 }
 
 textarea {
@@ -179,11 +194,83 @@ textarea {
   gap: 12px;
 }
 
+/* 横2列に並べる用 */
+.row.two-col-mobile {
+  grid-template-columns: 1fr 1fr;
+}
+
 .footer-note {
   font-size: 12px;
   color: var(--muted);
   line-height: 1.7;
   margin-top: 12px;
+}
+
+/* チェックボックス用 */
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* 折りたたみ用スタイル*/
+.collapsible-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.collapse-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.collapse-summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapse-hint {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.collapse-body {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* パターンタブ用スタイルを追加 */
+.pattern-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tab {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 10px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: var(--accent-strong);
+  color: #fff;
+  border-color: var(--accent-strong);
 }
 
 @media (max-width:560px) {
