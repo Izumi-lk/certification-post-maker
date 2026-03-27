@@ -45,6 +45,7 @@
       </div>
 
       <button class="btn" id="generateBtn" type="button">画像を生成</button>
+      <button class="btn secondary" id="shareAllBtn" type="button">まとめて保存 / 共有</button>
 
       <div class="status" id="generateStatus"></div>
       <div class="status" id="resultStatus"></div>
@@ -94,7 +95,7 @@
           </div>
           <div class="field">
             <label class="label" for="outlineWidthInput">アウトライン太さ（0でなし）</label>
-            <input type="number" id="outlineWidthInput" min="0" value="2" />
+            <input type="number" id="outlineWidthInput" min="0" value="20" />
           </div>
         </div>
 
@@ -142,8 +143,7 @@
         <div class="section-title subheading">投稿文</div>
         <div class="field">
           <label class="label" for="postText">本文・ハッシュタグ（自由入力）</label>
-          <textarea id="postText">250326 20:30
-#내가_살아있다는_증거_MV_스트리밍 #TUNEXX #김인후</textarea>
+          <textarea id="postText"></textarea>
         </div>
 
         <div class="field">
@@ -155,71 +155,11 @@
       </div>
     </details>
 
-    <!-- 1. 共通設定 -->
-    <div class="card">
-      <div class="section-title">1. 共通設定</div>
-
-      <div class="field">
-        <label class="label" for="xIdInput">画像に入れるX ID</label>
-        <input type="text" id="xIdInput" value="@inu_5122" />
-      </div>
-
-      <div class="field">
-        <label class="label" for="imageFiles">画像アップロード</label>
-        <input type="file" id="imageFiles" accept="image/*" multiple />
-        <div class="hint">4枚まとめて選択してください。1,2枚目がMV用、3,4枚目が音源用として扱われます。</div>
-      </div>
-
-      <button class="btn" id="generateBtn" type="button">画像を生成</button>
-      <button class="btn secondary" id="shareAllBtn" type="button">4枚まとめて保存</button>
-
-      <div class="status" id="generateStatus"></div>
-      <div class="status" id="resultStatus"></div>
-    </div>
-
-    <!-- 2. MV投稿設定 -->
-    <div class="card">
-      <div class="section-title">2. MV投稿設定</div>
-
-      <div class="field">
-        <label class="label" for="mvPostText">MV投稿文プレビュー</label>
-        <div class="hint">現在時刻から自動生成されます。形式：1/22 5pm</div>
-        <textarea id="mvPostText">#내가_살아있다는_증거_MV_스트리밍</textarea>
-      </div>
-
-      <a id="mvActionLink" class="btn secondary link-btn" href="#" target="_blank" rel="noopener">
-        投稿文をコピーして新しいポストを開く
-      </a>
-    </div>
-
-    <!-- 3. 音源投稿設定 -->
-    <div class="card">
-      <div class="section-title">3. 音源投稿設定</div>
-
-      <div class="field">
-        <label class="label" for="stPostText">音源投稿文プレビュー</label>
-        <div class="hint">現在時刻から自動生成されます。形式：1/22 5pm</div>
-        <textarea id="stPostText">#내가_살아있다는_증거_음원_스트리밍</textarea>
-      </div>
-
-      <a id="stActionLink" class="btn secondary link-btn" href="#" target="_blank" rel="noopener">
-        投稿文をコピーして新しいポストを開く
-      </a>
-    </div>
-
-    <!-- 4. MV生成結果 -->
+    <!-- 画像生成結果 -->
     <div class="card">
       <div class="section-title">4. MV生成結果</div>
-      <div class="preview-grid" id="mvPreviewGrid">
+      <div class="preview-grid" id="previewGrid">
         <!-- JSで image1 / image2 のプレビューを描画 -->
-      </div>
-    </div>
-
-    <!-- 5. 音源生成結果 -->
-    <div class="card">
-      <div class="section-title">5. 音源生成結果</div>
-      <div class="preview-grid" id="stPreviewGrid">
-        <!-- JSで image3 / image4 のプレビューを描画 -->
       </div>
     </div>
   </div>

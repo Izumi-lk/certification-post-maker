@@ -1,18 +1,18 @@
 const DEFAULT_PATTERN = {
   watermarkText: '@inu_5122',
-  fontSize: 32,
+  fontSize: 80,
   fontWeight: 800,
-  fontFamily: 'default',
+  fontFamily: 'Arial, sans-serifault',
   textColor: '#ffffff',
   outlineColor: '#ff2b88',
   outlineWidth: 2,
   highlightEnabled: true,
   highlightColor: '#ffe4f0',
   highlightPadding: 8,
-  opacity: 85,
+  opacity: 100,
   positionX: 0,
   positionY: 0,
-  postText: '',
+  postText: 'テストテキスト\n#내가_살아있다는_증거_MV_스트리밍',
   includeCurrentTime: true
 };
 
@@ -90,36 +90,118 @@ const els = {
 
 function saveSettings() {
   const settings = {
-    xId: (els.xIdInput.value || '').trim() || DEFAULTS.xId
+    watermarkText: (els.watermarkText.value || '').trim() || DEFAULT_PATTERN.watermarkText
   };
 
-  localStorage.setItem('mv_helper_settings', JSON.stringify(settings));
+  const STORAGE_KEY = 'mv_helper_patterns_v2';
   refreshPostTexts();
-  updatePostLinks();
   els.settingsStatus.innerHTML = '<span class="ok">設定を保存しました。</span>';
+}
+
+// 3-6. saveSettings / loadSettings / applySettings を作り直す
+
+function loadPersistedState() { }
+function savePersistedState() { }
+function getCurrentDraft() { }
+function readFormToPattern() { }
+function applyPatternToForm(pattern) { }
+function saveCurrentPattern() { }
+function switchPattern(patternId) { }
+
+// 3-7. 投稿文まわりを再設計
+
+//refreshPostTexts()
+//updatePostLinks()
+
+function getCurrentTimeLabel() {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  const hour24 = now.getHours();
+
+  const suffix = hour24 < 12 ? 'am' : 'pm';
+  let hour12 = hour24 % 12;
+  if (hour12 === 0) hour12 = 12;
+
+  return `${month}/${day} ${hour12}${suffix}`;
+}
+
+function buildFinalPostText(pattern) {
+  const parts = [];
+
+  if (/*pattern.includeCurrentTime*/ true) { //TODO readFormToPattern() の作成後
+    parts.push(getCurrentTimeLabel());
+  }
+
+  const text = (pattern.postText || '').trim();
+  if (text) parts.push(text);
+
+  return parts.join('\n');
+}
+
+function refreshPostTexts() {
+  console.log('refreshPostTexts');
+  const pattern = readFormToPattern() || DEFAULT_PATTERN;
+  const finalText = buildFinalPostText(pattern);
+  els.postText.value = finalText;
+}
+
+function copyPostAndOpenX() {
+  const pattern = readFormToPattern() || DEFAULT_PATTERN;
+  const finalText = buildFinalPostText(pattern);
+
+  navigator.clipboard.writeText(finalText).catch(() => { });
+  window.open(buildTweetUrl(finalText), '_blank'/*, 'noopener'*/);
+}
+
+// 3-8. 「チェックONなら投稿文欄に時刻文字列を含める」処理
+
+function syncTimeLabelInPostText() {
+  const checked = els.includeCurrentTimeInput.checked;
+  const currentValue = els.postText.value || '';
+  const lines = currentValue.split('\n');
+  const timeLabel = getCurrentTimeLabel();
+
+  const firstLine = lines[0]?.trim();
+  const looksLikeTime = /^\d{1,2}\/\d{1,2}\s+\d{1,2}(am|pm)$/i.test(firstLine);
+
+  if (checked) {
+    if (!looksLikeTime) {
+      els.postText.value = currentValue.trim()
+        ? `${timeLabel}\n${currentValue}`
+        : timeLabel;
+    } else {
+      lines[0] = timeLabel;
+      els.postText.value = lines.join('\n');
+    }
+  } else {
+    if (looksLikeTime) {
+      els.postText.value = lines.slice(1).join('\n');
+    }
+  }
 }
 
 function loadSettings() {
   try {
     const raw = localStorage.getItem('mv_helper_settings');
     if (!raw) {
-      applySettings(DEFAULTS);
+      applySettings(DEFAULT_PATTERN);
       return;
     }
 
     const saved = JSON.parse(raw);
     applySettings({
-      xId: saved.xId || DEFAULTS.xId
+      watermarkText: saved.watermarkText || DEFAULT_PATTERN.watermarkText
     });
   } catch (e) {
-    applySettings(DEFAULTS);
+    applySettings(DEFAULT_PATTERN);
   }
 }
 
 function applySettings(settings) {
-  els.xIdInput.value = settings.xId || DEFAULTS.xId;
+  els.watermarkText.value = settings.watermarkText || DEFAULT_PATTERN.watermarkText;
   refreshPostTexts();
-  updatePostLinks();
+  //updatePostLinks();
 }
 
 function setStatus(target, text, isError = false) {
@@ -141,45 +223,11 @@ function getTimestampString() {
   return `${yyyy}${mm}${dd}_${hh}${mi}`;
 }
 
-function getCurrentTimeLabel() {
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  const hour24 = now.getHours();
-
-  const suffix = hour24 < 12 ? 'am' : 'pm';
-  let hour12 = hour24 % 12;
-  if (hour12 === 0) hour12 = 12;
-
-  return `${month}/${day} ${hour12}${suffix}`;
-}
-
-function buildPostText(type) {
-  const timeLabel = getCurrentTimeLabel();
-  const hashtag = type === 'mv' ? MV_HASHTAG : AU_HASHTAG;
-  return `${timeLabel}\n${hashtag}`;
-}
-
-function refreshPostTexts() {
-  els.mvPostText.value = buildPostText('mv');
-  els.stPostText.value = buildPostText('st');
-}
 
 function buildTweetUrl(text) {
   return `https://x.com/intent/tweet?text=${encodeURIComponent(text || '')}`;
 }
 
-function setActionLink(linkEl, text) {
-  linkEl.href = buildTweetUrl(text);
-  linkEl.style.pointerEvents = 'auto';
-  linkEl.style.opacity = '1';
-}
-
-function updatePostLinks() {
-  refreshPostTexts();
-  setActionLink(els.mvActionLink, els.mvPostText.value);
-  setActionLink(els.stActionLink, els.stPostText.value);
-}
 
 function loadImageFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -213,7 +261,12 @@ function dataUrlToFile(dataUrl, filename) {
   return new File([u8arr], filename, { type: mime });
 }
 
-function drawCenteredTextOnImage(img, text, style) {
+// 3-11. drawCenteredTextOnImage を複数行・座標・透明度・背景帯対応へ拡張
+function drawTextOnImage(img, text, style) {
+  // 複数行
+  // outlineWidth = 0 のとき stroke しない
+  // highlightEnabled のとき背景帯を描画
+  // opacity を rgba / globalAlpha に反映
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
@@ -228,8 +281,8 @@ function drawCenteredTextOnImage(img, text, style) {
   ctx.lineJoin = 'round';
   ctx.miterLimit = 2;
 
-  const x = canvas.width / 2 + canvas.width * style.offsetX;
-  const y = canvas.height / 2 + canvas.height * style.offsetY;
+  const x = style.x;
+  const y = style.y;
 
   ctx.shadowColor = style.shadowColor;
   ctx.shadowBlur = style.shadowBlur;
@@ -244,6 +297,31 @@ function drawCenteredTextOnImage(img, text, style) {
   return canvas.toDataURL('image/png');
 }
 
+function patternToRenderStyle(pattern, imageWidth, imageHeight) {
+  const baseWidth = 1080;
+  const scale = imageWidth / baseWidth;
+  console.log('patternToRenderStyle', { imageWidth, imageHeight, scale });
+  console.log('fontSize ', Number(pattern.fontSize) * scale);
+  return {
+    fontSize: Number(pattern.fontSize) * scale,
+    fontWeight: String(pattern.fontWeight),
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif', // resolveFontFamily(pattern.fontFamily), 
+    // TODO readFormToPattern() の作成後
+    fillStyle: pattern.textColor,
+    strokeStyle: pattern.outlineColor,
+    lineWidth: Number(pattern.outlineWidth) * scale,
+    highlightEnabled: !!pattern.highlightEnabled,
+    highlightColor: pattern.highlightColor,
+    highlightPadding: Number(pattern.highlightPadding || 8) * scale,
+    opacity: Number(pattern.opacity) / 100,
+    x: imageWidth / 2 + (Number(pattern.positionX) / 50) * (imageWidth / 2),
+    y: imageHeight / 2 + (Number(pattern.positionY) / 50) * (imageHeight / 2)
+  };
+}
+
+// 不要
+function drawCenteredTextOnImage(img, text, style) { }
+
 function resetStateImages() {
   state.image1 = null;
   state.image2 = null;
@@ -251,55 +329,43 @@ function resetStateImages() {
   state.image4 = null;
 }
 
-function getAllImages() {
-  return [state.image1, state.image2, state.image3, state.image4].filter(Boolean);
-}
-
-function getMvImages() {
-  return [state.image1, state.image2].filter(Boolean);
-}
-
-function getStImages() {
-  return [state.image3, state.image4].filter(Boolean);
-}
-
 async function generateImages() {
   try {
     setStatus(els.generateStatus, '画像を生成中...');
     setStatus(els.resultStatus, '');
     els.shareAllBtn.disabled = true;
-    els.mvPreviewGrid.innerHTML = '';
-    els.stPreviewGrid.innerHTML = '';
+    els.previewGrid.innerHTML = '';
     resetStateImages();
 
-    const xId = (els.xIdInput.value || '').trim() || DEFAULTS.xId;
     const files = Array.from(els.imageFiles.files || []);
 
-    if (files.length !== 4) {
-      throw new Error('画像は4枚ちょうど選択してください。');
+    // 3-9. 画像生成ロジックを 1〜4枚対応に変更
+    if (files.length < 1 || files.length > 4) {
+      throw new Error('画像は1〜4枚選択してください。');
     }
 
-    const loadedImages = await Promise.all(files.map(file => loadImageFromFile(file)));
+    const pattern = readFormToPattern() || DEFAULT_PATTERN;
+    const loadedImages = await Promise.all(
+      files.map(file => loadImageFromFile(file))
+    );
     const timestamp = getTimestampString();
 
-    loadedImages.forEach((img, index) => {
-      const style = index < 2 ? MV_STYLE : AU_STYLE;
-      const dataUrl = drawCenteredTextOnImage(img, xId, style);
-      const name = escapeFileName(`${timestamp}_${index + 1}.png`);
-      const imageObj = {
-        dataUrl,
-        file: dataUrlToFile(dataUrl, name),
-        name
-      };
+    // 加工済み画像を配列で作る
+    state.images = loadedImages.map((img, index) => {
+      const renderStyle = patternToRenderStyle(pattern, img.width, img.height);
+      const dataUrl = drawTextOnImage(img, pattern.watermarkText, renderStyle);
+      const fileName = escapeFileName(`${timestamp}_${index + 1}.png`);
+      const file = dataUrlToFile(dataUrl, fileName);
 
-      if (index === 0) state.image1 = imageObj;
-      if (index === 1) state.image2 = imageObj;
-      if (index === 2) state.image3 = imageObj;
-      if (index === 3) state.image4 = imageObj;
+      return {
+        index,
+        fileName,
+        dataUrl,
+        file
+      };
     });
 
-    renderMvPreviewList();
-    renderStPreviewList();
+    renderPreview();
     els.shareAllBtn.disabled = false;
     els.imageFiles.value = '';
 
@@ -307,11 +373,15 @@ async function generateImages() {
     setStatus(els.generateStatus, '画像を生成しました。');
     setStatus(
       els.resultStatus,
-      `` //生成完了\n${images.map(item => item.name).join('\n')}
+      `生成完了\n${images.map(item => item.name).join('\n')}`
     );
   } catch (err) {
     setStatus(els.generateStatus, err.message || '画像生成に失敗しました。', true);
   }
+}
+
+function getAllImages() {
+  return state.images;
 }
 
 async function copyMvPostText() {
@@ -421,55 +491,64 @@ function createPreviewBox(item, labelPrefix) {
   return box;
 }
 
-function renderMvPreviewList() {
-  els.mvPreviewGrid.innerHTML = '';
-  const images = getMvImages();
+function renderPreview() {
+  els.previewGrid.innerHTML = '';
 
-  images.forEach((item, index) => {
-    const label = `MV画像 ${index + 1}`;
-    els.mvPreviewGrid.appendChild(createPreviewBox(item, label));
+  state.images.forEach((item, index) => {
+    const box = document.createElement('div');
+    box.className = 'preview-box';
+    box.innerHTML = `
+      <div class="preview-head">画像${index + 1}</div>
+      <img class="preview-img" src="${item.dataUrl}" alt="画像${index + 1}">
+      <div class="preview-actions">
+        <button class="mini-btn" id="shareBtn${index}" type="button">この画像を保存 / 共有</button>
+      </div>
+    `;
+    els.previewGrid.appendChild(box);
+    document.getElementById(`shareBtn${index}`).addEventListener('click', async () => {
+      await shareFiles([item.file], item.fileName);
+    });
   });
 }
 
-function renderStPreviewList() {
-  els.stPreviewGrid.innerHTML = '';
-  const images = getStImages();
+function renderMvPreviewList() {
+  els.previewGrid.innerHTML = '';
+  const images = getMvImages();
 
   images.forEach((item, index) => {
-    const label = `音源画像 ${index + 1}`;
-    els.stPreviewGrid.appendChild(createPreviewBox(item, label));
+    const label = `画像 ${index + 1}`;
+    els.previewGrid.appendChild(createPreviewBox(item, label));
   });
 }
 
 async function shareAll() {
-  const files = [];
-
-  if (state.image1) files.push(state.image1.file);
-  if (state.image2) files.push(state.image2.file);
-  if (state.image3) files.push(state.image3.file);
-  if (state.image4) files.push(state.image4.file);
+  const files = (state.images || [])
+    .map(item => item.file)
+    .filter(Boolean);
 
   if (!files.length) {
     setStatus(els.resultStatus, '先に画像を生成してください。', true);
     return;
   }
 
-  await shareFiles(files, 'MV / Audio Streaming Images');
+  await shareFiles(files, 'Streaming Images');
 }
 
 els.generateBtn.addEventListener('click', generateImages);
 els.shareAllBtn.addEventListener('click', shareAll);
 
-els.mvPostText.addEventListener('input', updatePostLinks);
-els.stPostText.addEventListener('input', updatePostLinks);
-els.xIdInput.addEventListener('input', saveSettings);
+//els.mvPostText.addEventListener('input', updatePostLinks);
+//els.stPostText.addEventListener('input', updatePostLinks);
+//els.xIdInput.addEventListener('input', saveSettings);
 
-bindCopyAndOpen(els.mvActionLink, copyMvPostText, els.mvActionStatus, 'MV');
-bindCopyAndOpen(els.stActionLink, copyStPostText, els.stActionStatus, '音源');
+els.includeCurrentTimeInput.addEventListener('change', syncTimeLabelInPostText);
+
+//bindCopyAndOpen(els.mvActionLink, copyMvPostText, els.mvActionStatus, 'MV');
+//bindCopyAndOpen(els.stActionLink, copyStPostText, els.stActionStatus, '音源');
 
 window.addEventListener('load', () => {
   loadSettings();
   refreshPostTexts();
-  updatePostLinks();
+  //updatePostLinks();
   //loadLatestReplyPostIds();
 });
