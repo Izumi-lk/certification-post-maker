@@ -200,6 +200,7 @@ textarea#postText {
   padding: 10px 14px;
   font-size: 14px;
   border-radius: 999px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -223,11 +224,6 @@ textarea#postText {
   font-size: 14px;
   cursor: pointer;
   padding: 0;
-}
-
-.preview-nav:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 .preview-file-name {
@@ -294,8 +290,6 @@ textarea#postText {
   flex-wrap: wrap;
 }
 
-
-
 .mini-btn {
   appearance: none;
   border: 1px solid var(--accent);
@@ -306,6 +300,15 @@ textarea#postText {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.5;
+  filter: grayscale(0.15);
+  cursor: not-allowed;
 }
 
 .row {

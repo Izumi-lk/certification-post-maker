@@ -24,8 +24,8 @@
         <button class="tab" type="button" data-pattern="3">パターン3</button>
       </div>
       <button class="btn secondary" id="copyPostBtn" type="button">投稿文をコピーして新しいポストを開く</button>
-
-      <div class="status" id="settingsStatus"></div>
+      <!-- ステータス表示はしない -->
+      <div class="status" id="settingsStatus" style="display: none;"></div>
     </div>
 
     <!-- 画像アップロード -->
@@ -43,7 +43,7 @@
     <div class="card">
       <div class="preview-topbar">
         <div class="section-title preview-title">プレビュー</div>
-        <button class="btn secondary preview-save-all-btn" id="shareAllBtn" type="button">
+        <button class="btn preview-save-all-btn" id="shareAllBtn" type="button">
           まとめて保存
         </button>
       </div>
@@ -83,21 +83,28 @@
           <textarea id="watermarkText">@inu_5122</textarea>
         </div>
         <!-- 文字デザイン -->
-        <div class="section-title subheading">文字デザイン</div>
+        <div class="section-title subheading" style="display: none;">文字デザイン</div>
         <div class="row two-col-mobile">
           <div class="field">
             <label class="label" for="fontSizeInput">文字サイズ</label>
             <input type="number" id="fontSizeInput" min="1" value="32" />
           </div>
+
           <div class="field">
             <label class="label" for="fontWeightInput">文字の太さ</label>
-            <input type="number" id="fontWeightInput" min="100" max="900" step="100" value="800" />
+            <select id="fontWeightInput">
+              <option value="300">Light</option>
+              <option value="500" selected>Medium</option>
+              <option value="700">Bold</option>
+              <option value="900">Black</option>
+            </select>
           </div>
 
           <div class="field">
             <label class="label" for="textColorInput">文字色</label>
             <input type="color" id="textColorInput" value="#ffffff" />
           </div>
+
           <div class="field">
             <label class="label" for="opacityInput">透明度（0〜100）</label>
             <input type="number" id="opacityInput" min="0" max="100" value="85" />
@@ -107,27 +114,53 @@
             <label class="label" for="outlineColorInput">アウトライン色</label>
             <input type="color" id="outlineColorInput" value="#ff2b88" />
           </div>
+
           <div class="field">
             <label class="label" for="outlineWidthInput">アウトライン太さ</label>
             <input type="number" id="outlineWidthInput" min="0" value="20" />
           </div>
+
+          <div class="field">
+            <label class="label" for="fontFamilySelect">フォント</label>
+            <select id="fontFamilySelect">
+              <option value='-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif' selected>
+                標準
+              </option>
+              <option value='"Hiragino Maru Gothic ProN", "Arial Rounded MT Bold", sans-serif'>
+                丸ゴシック
+              </option>
+              <option value='"Hiragino Sans", "Yu Gothic", Meiryo, sans-serif'>
+                日本語標準
+              </option>
+              <option value='"Arial Black", "Helvetica Neue", Arial, sans-serif'>
+                インパクト
+              </option>
+              <option value='"Apple SD Gothic Neo", "Malgun Gothic", sans-serif'>
+                韓国語向け
+              </option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="label" for="lineHeightSelect">行間隔</label>
+            <select id="lineHeightSelect">
+              <option value='1'>1</option>
+              <option value='1.25'>1.25</option>
+              <option value='1.5'>1.5</option>
+              <option value='1.75'>1.75</option>
+              <option value='2'>2</option>
+            </select>
+          </div>
         </div>
 
-        <div class="field">
-          <label class="label" for="fontFamilySelect">フォント</label>
-          <select id="fontFamilySelect">
-            <option value="default">固定フォント（初期実装）</option>
-          </select>
-        </div>
         <!-- ハイライト背景帯 -->
-        <div class="section-title subheading">ハイライト背景帯</div>
+        <div class="section-title subheading" style="display: none;">ハイライト背景帯</div>
 
         <div class="field">
           <label class="check">
             <input type="checkbox" id="highlightEnabledInput" checked />
             ハイライトを表示する
           </label>
-          <div class="hint">余白量は固定です。</div>
         </div>
 
         <div class="row two-col-mobile">
@@ -137,11 +170,11 @@
           </div>
           <div class="field">
             <label class="label" for="highlightPaddingInput">背景帯の余白量</label>
-            <input type="number" id="highlightPaddingInput" value="8" disabled />
+            <input type="number" id="highlightPaddingInput" value="8" />
           </div>
         </div>
         <!-- 位置 -->
-        <div class="section-title subheading">位置</div>
+        <div class="section-title subheading" style="display: none;">位置</div>
         <div class="row two-col-mobile">
           <div class="field">
             <label class="label" for="positionXInput">X座標（-50〜50）</label>
@@ -152,7 +185,6 @@
             <input type="number" id="positionYInput" min="-50" max="50" value="0" />
           </div>
         </div>
-        <div class="hint">画像中央を 0,0 とする正規化座標です。</div>
         <!-- 投稿文 -->
         <div class="section-title subheading">投稿文</div>
         <div class="field">

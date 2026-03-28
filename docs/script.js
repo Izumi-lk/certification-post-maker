@@ -2,7 +2,8 @@ const DEFAULT_PATTERN = {
   watermarkText: '@sample',
   fontSize: 80,
   fontWeight: 80,
-  fontFamily: 'Arial, sans-serif',
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
+  lineHeight: '1.5',
   textColor: '#ffffff',
   outlineColor: '#ff2b88',
   outlineWidth: 10,
@@ -70,6 +71,7 @@ const els = {
   fontSizeInput: document.getElementById('fontSizeInput'),
   fontWeightInput: document.getElementById('fontWeightInput'),
   fontFamilySelect: document.getElementById('fontFamilySelect'),
+  lineHeightSelect: document.getElementById('lineHeightSelect'),
   textColorInput: document.getElementById('textColorInput'),
   outlineColorInput: document.getElementById('outlineColorInput'),
   outlineWidthInput: document.getElementById('outlineWidthInput'),
@@ -162,6 +164,7 @@ function readFormToPattern() {
     fontSize: Number(els.fontSizeInput.value) || DEFAULT_PATTERN.fontSize,
     fontWeight: Number(els.fontWeightInput.value) || DEFAULT_PATTERN.fontWeight,
     fontFamily: els.fontFamilySelect.value || DEFAULT_PATTERN.fontFamily,
+    lineHeight: els.lineHeightSelect.value || DEFAULT_PATTERN.lineHeight,
     textColor: els.textColorInput.value || DEFAULT_PATTERN.textColor,
     outlineColor: els.outlineColorInput.value || DEFAULT_PATTERN.outlineColor,
     outlineWidth: Number(els.outlineWidthInput.value) || 0,
@@ -183,6 +186,7 @@ function applyPatternToForm(pattern) {
   els.fontSizeInput.value = p.fontSize;
   els.fontWeightInput.value = p.fontWeight;
   els.fontFamilySelect.value = p.fontFamily;
+  els.lineHeightSelect.value = p.lineHeight;
   els.textColorInput.value = p.textColor;
   els.outlineColorInput.value = p.outlineColor;
   els.outlineWidthInput.value = p.outlineWidth;
@@ -202,7 +206,6 @@ function saveCurrentPattern() {
   state.drafts[state.activePatternId] = pattern.postText || '';
   savePersistedState();
   refreshTimePreview();
-  schedulePreviewRerender(0);
   els.settingsStatus.innerHTML = '<span class="ok">このパターンを保存しました。</span>';
 }
 
@@ -224,7 +227,11 @@ function switchPattern(patternId) {
   savePersistedState();
   refreshTimePreview();
   setStatus(els.settingsStatus, `パターン${nextId}に切り替えました。`);
-  schedulePreviewRerender(0);
+  if (hasSelectedImages()) {
+    schedulePreviewRerender(0);
+  } else {
+    renderSamplePreview();
+  }
 }
 
 function updatePatternTabs() {
@@ -337,6 +344,15 @@ function loadImageFromFile(file) {
   });
 }
 
+function loadImageFromUrl(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('サンプル画像の読み込みに失敗しました。'));
+    img.src = src;
+  });
+}
+
 function dataUrlToFile(dataUrl, filename) {
   const arr = dataUrl.split(',');
   const mimeMatch = arr[0].match(/:(.*?);/);
@@ -351,7 +367,6 @@ function dataUrlToFile(dataUrl, filename) {
 }
 
 // 画像生成ロジック
-// TODO 複数行・座標・透明度・背景帯対応へ拡張
 function drawTextOnImage(img, text, style) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -381,8 +396,8 @@ function drawTextOnImage(img, text, style) {
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.miterLimit = 2;
-
-  const lineHeight = style.fontSize * 1.2;
+1.5
+  const lineHeight = style.fontSize * style.lineHeight;
   const textWidths = lines.map((line) => ctx.measureText(line).width);
   const maxTextWidth = Math.max(...textWidths, 0);
 
@@ -391,12 +406,13 @@ function drawTextOnImage(img, text, style) {
   const blockBottom = style.y + blockHeight / 2;
 
   const paddingX = style.highlightPadding;
-  const paddingY = Math.max(style.highlightPadding * 0.7, style.fontSize * 0.18);
+  const paddingY = style.highlightPadding;
   const rectX = style.x - maxTextWidth / 2 - paddingX;
   const rectY = blockTop - paddingY;
   const rectWidth = maxTextWidth + paddingX * 2;
   const rectHeight = blockHeight + paddingY * 2;
-  const rectRadius = Math.max(style.fontSize * 0.2, 10);
+  const rectRadius = 0;
+  // Math.max(style.fontSize * 0.2, 10);
 
   ctx.globalAlpha = style.opacity;
 
@@ -439,22 +455,21 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
 
 function patternToRenderStyle(pattern, imageWidth, imageHeight) {
   const baseWidth = 1080;
-  const scale = imageWidth / baseWidth;
+  const scale = Math.min(imageWidth, imageHeight) / baseWidth;
   return {
     fontSize: Number(pattern.fontSize) * scale,
     fontWeight: String(pattern.fontWeight),
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif', // resolveFontFamily(pattern.fontFamily), 
-    // TODO readFormToPattern() の作成後
+    fontFamily: pattern.fontFamily || '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
+    lineHeight: Number(pattern.lineHeight) || 1.5,
     fillStyle: pattern.textColor,
     strokeStyle: pattern.outlineColor,
     lineWidth: Number(pattern.outlineWidth) * scale,
     highlightEnabled: !!pattern.highlightEnabled,
     highlightColor: pattern.highlightColor,
     highlightPadding: Number(pattern.highlightPadding || 8) * scale,
-    //opacity: Number(pattern.opacity) / 100,
     opacity: Math.max(0, Math.min(1, Number(pattern.opacity) / 100)),
     x: imageWidth / 2 + (Number(pattern.positionX) / 50) * (imageWidth / 2),
-    y: imageHeight / 2 + (Number(pattern.positionY) / 50) * (imageHeight / 2)
+    y: imageHeight / 2 + (Number(pattern.positionY) * (-1) / 50) * (imageHeight / 2)
   };
 }
 
@@ -463,7 +478,6 @@ function resetStateImages() {
   state.currentPreviewIndex = 0;
 }
 
-//async function generateImages() {
 async function generateImages(options = {}) {
   const {
     preserveIndex = false,
@@ -560,13 +574,32 @@ function normalizePreviewIndex() {
 }
 
 function renderEmptyPreview() {
-  els.previewFileName.textContent = SAMPLE_FILE_NAME;
-  els.previewMainImg.src = SAMPLE_SRC;
-  els.previewMainImg.alt = 'サンプル画像';
-  els.prevPreviewBtn.disabled = true;
-  els.nextPreviewBtn.disabled = true;
-  els.shareAllBtn.disabled = true;
-  els.shareCurrentBtn.disabled = true;
+  renderSamplePreview();
+}
+
+async function renderSamplePreview() {
+  try {
+    const pattern = readFormToPattern() || DEFAULT_PATTERN;
+    const sampleImg = await loadImageFromUrl(SAMPLE_SRC);
+    const renderStyle = patternToRenderStyle(pattern, sampleImg.width, sampleImg.height);
+    const dataUrl = drawTextOnImage(sampleImg, pattern.watermarkText, renderStyle);
+
+    els.previewFileName.textContent = SAMPLE_FILE_NAME;
+    els.previewMainImg.src = dataUrl;
+    els.previewMainImg.alt = '文字入りサンプル画像';
+    els.prevPreviewBtn.disabled = true;
+    els.nextPreviewBtn.disabled = true;
+    els.shareAllBtn.disabled = true;
+    els.shareCurrentBtn.disabled = true;
+  } catch (err) {
+    els.previewFileName.textContent = SAMPLE_FILE_NAME;
+    els.previewMainImg.src = SAMPLE_SRC;
+    els.previewMainImg.alt = 'サンプル画像';
+    els.prevPreviewBtn.disabled = true;
+    els.nextPreviewBtn.disabled = true;
+    els.shareAllBtn.disabled = true;
+    els.shareCurrentBtn.disabled = true;
+  }
 }
 
 function renderPreviewViewer() {
@@ -622,60 +655,6 @@ async function shareFiles(files, titleText) {
       true
     );
   }
-}
-
-// 不要
-function createPreviewBox(item, labelPrefix) {
-  const box = document.createElement('div');
-  box.className = 'preview-box';
-
-  const head = document.createElement('div');
-  head.className = 'preview-head';
-  head.textContent = `${labelPrefix}（生成後）`;
-
-  const img = document.createElement('img');
-  img.className = 'preview-img';
-  img.src = item.dataUrl;
-  img.alt = `${labelPrefix}のプレビュー`;
-
-  const actions = document.createElement('div');
-  actions.className = 'preview-actions';
-
-  const btn = document.createElement('button');
-  btn.className = 'mini-btn';
-  btn.type = 'button';
-  btn.textContent = 'この画像を保存 / 共有';
-  btn.addEventListener('click', async () => {
-    await shareFiles([item.file], item.name);
-  });
-
-  actions.appendChild(btn);
-  box.appendChild(head);
-  box.appendChild(img);
-  box.appendChild(actions);
-
-  return box;
-}
-
-//不要
-function renderPreview() {
-  els.previewGrid.innerHTML = '';
-
-  state.images.forEach((item, index) => {
-    const box = document.createElement('div');
-    box.className = 'preview-box';
-    box.innerHTML = `
-      <div class="preview-head">画像${index + 1}</div>
-      <img class="preview-img" src="${item.dataUrl}" alt="画像${index + 1}">
-      <div class="preview-actions">
-        <button class="mini-btn" id="shareBtn${index}" type="button">この画像を保存 / 共有</button>
-      </div>
-    `;
-    els.previewGrid.appendChild(box);
-    document.getElementById(`shareBtn${index}`).addEventListener('click', async () => {
-      await shareFiles([item.file], item.fileName);
-    });
-  });
 }
 
 async function shareCurrentPreview() {
@@ -749,7 +728,12 @@ async function handleImageFilesChange() {
 function handleEditorValueChange() {
   persistCurrentEditorState();
   refreshTimePreview();
-  schedulePreviewRerender();
+
+  if (hasSelectedImages()) {
+    schedulePreviewRerender();
+  } else {
+    renderSamplePreview();
+  }
 }
 
 function handlePostTextChange() {
@@ -778,6 +762,7 @@ els.patternTabs.forEach((tab) => {
   els.fontSizeInput,
   els.fontWeightInput,
   els.fontFamilySelect,
+  els.lineHeightSelect,
   els.textColorInput,
   els.outlineColorInput,
   els.outlineWidthInput,
