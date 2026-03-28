@@ -27,28 +27,9 @@
         <button class="tab" type="button" data-pattern="2">パターン2</button>
         <button class="tab" type="button" data-pattern="3">パターン3</button>
       </div>
-
-      <button class="btn" id="savePatternBtn" type="button">このパターンを保存</button>
       <button class="btn secondary" id="copyPostBtn" type="button">投稿文をコピーして新しいポストを開く</button>
 
       <div class="status" id="settingsStatus"></div>
-    </div>
-
-    <!-- 画像アップロード -->
-    <div class="card">
-      <div class="section-title">画像アップロード</div>
-
-      <div class="field">
-        <label class="label" for="imageFiles">画像アップロード</label>
-        <input type="file" id="imageFiles" accept="image/*" multiple />
-        <div class="hint">1〜4枚まで選択できます。選択したすべての画像に同じ設定を適用します。</div>
-      </div>
-
-      <button class="btn" id="generateBtn" type="button">画像を生成</button>
-      <button class="btn secondary" id="shareAllBtn" type="button">まとめて保存 / 共有</button>
-
-      <div class="status" id="generateStatus"></div>
-      <div class="status" id="resultStatus"></div>
     </div>
 
     <!-- 設定編集 -->
@@ -66,7 +47,7 @@
         </div>
         <!-- 文字デザイン -->
         <div class="section-title subheading">文字デザイン</div>
-        <div class="row">
+        <div class="row two-col-mobile">
           <div class="field">
             <label class="label" for="fontSizeInput">文字サイズ</label>
             <input type="number" id="fontSizeInput" min="1" value="32" />
@@ -75,9 +56,7 @@
             <label class="label" for="fontWeightInput">文字の太さ</label>
             <input type="number" id="fontWeightInput" min="100" max="900" step="100" value="800" />
           </div>
-        </div>
 
-        <div class="row">
           <div class="field">
             <label class="label" for="textColorInput">文字色</label>
             <input type="color" id="textColorInput" value="#ffffff" />
@@ -86,15 +65,13 @@
             <label class="label" for="opacityInput">透明度（0〜100）</label>
             <input type="number" id="opacityInput" min="0" max="100" value="85" />
           </div>
-        </div>
 
-        <div class="row">
           <div class="field">
             <label class="label" for="outlineColorInput">アウトライン色</label>
             <input type="color" id="outlineColorInput" value="#ff2b88" />
           </div>
           <div class="field">
-            <label class="label" for="outlineWidthInput">アウトライン太さ（0でなし）</label>
+            <label class="label" for="outlineWidthInput">アウトライン太さ</label>
             <input type="number" id="outlineWidthInput" min="0" value="20" />
           </div>
         </div>
@@ -116,7 +93,7 @@
           <div class="hint">余白量は固定です。</div>
         </div>
 
-        <div class="row">
+        <div class="row two-col-mobile">
           <div class="field">
             <label class="label" for="highlightColorInput">ハイライト色</label>
             <input type="color" id="highlightColorInput" value="#ffe4f0" />
@@ -143,6 +120,7 @@
         <div class="section-title subheading">投稿文</div>
         <div class="field">
           <label class="label" for="postText">本文・ハッシュタグ（自由入力）</label>
+          <div id="timePreview" class="post-time-preview" aria-live="polite"></div>
           <textarea id="postText"></textarea>
         </div>
 
@@ -152,18 +130,43 @@
             現在時刻の自動生成文字列を先頭に含める
           </label>
         </div>
+      <button class="btn" id="savePatternBtn" type="button">編集内容を保存</button>
       </div>
     </details>
 
+    <!-- 画像アップロード -->
+    <div class="card">
+      <div class="section-title">画像アップロード</div>
+
+      <div class="field">
+        <label class="label" for="imageFiles">画像アップロード</label>
+        <input type="file" id="imageFiles" accept="image/*" multiple />
+        <div class="hint">1〜4枚まで選択できます。選択したすべての画像に同じ設定を適用します。</div>
+      </div>
+
+      <button class="btn" id="generateBtn" type="button">画像を生成</button>
+      <button class="btn secondary" id="shareAllBtn" type="button">まとめて保存 / 共有</button>
+
+      <div class="status" id="generateStatus"></div>
+      <div class="status" id="resultStatus"></div>
+    </div>
+
+
+
     <!-- 画像生成結果 -->
     <div class="card">
-      <div class="section-title">4. MV生成結果</div>
+      <div class="section-title">生成結果</div>
       <div class="preview-grid" id="previewGrid">
-        <!-- JSで image1 / image2 のプレビューを描画 -->
+        <!-- JSでプレビューを描画 -->
       </div>
     </div>
   </div>
   <script src="script.js" defer></script>
 </body>
 
+<footer>
+  <div class="footer-content">
+    <div class="footer-item">© 2026 Izumi</div>
+  </div>
+</footer>
 </html>

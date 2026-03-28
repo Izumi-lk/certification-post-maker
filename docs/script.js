@@ -2,7 +2,7 @@ const DEFAULT_PATTERN = {
   watermarkText: '@inu_5122',
   fontSize: 80,
   fontWeight: 800,
-  fontFamily: 'Arial, sans-serifault',
+  fontFamily: 'Arial, sans-serif',
   textColor: '#ffffff',
   outlineColor: '#ff2b88',
   outlineWidth: 2,
@@ -29,6 +29,8 @@ const DEFAULT_PATTERN = {
   shadowBlur: 0
 };*/
 
+const STORAGE_KEY = 'mv_helper_patterns_v2';
+
 const state = {
   activePatternId: 1,
 
@@ -48,9 +50,6 @@ const state = {
 };
 
 const els = {
-  imageFiles: document.getElementById('imageFiles'),
-  generateBtn: document.getElementById('generateBtn'),
-  shareAllBtn: document.getElementById('shareAllBtn'),
   mvActionStatus: document.getElementById('mvActionStatus'),
   stActionStatus: document.getElementById('stActionStatus'),
   generateStatus: document.getElementById('generateStatus'),
@@ -74,12 +73,14 @@ const els = {
   outlineColorInput: document.getElementById('outlineColorInput'),
   outlineWidthInput: document.getElementById('outlineWidthInput'),
   highlightEnabledInput: document.getElementById('highlightEnabledInput'),
+  highlightPaddingInput: document.getElementById('highlightPaddingInput'),
   highlightColorInput: document.getElementById('highlightColorInput'),
   opacityInput: document.getElementById('opacityInput'),
   positionXInput: document.getElementById('positionXInput'),
   positionYInput: document.getElementById('positionYInput'),
   postText: document.getElementById('postText'),
   includeCurrentTimeInput: document.getElementById('includeCurrentTimeInput'),
+  timePreview: document.getElementById('timePreview'),
 
   previewGrid: document.getElementById('previewGrid'),
 
@@ -89,24 +90,163 @@ const els = {
 };
 
 function saveSettings() {
+  saveCurrentPattern();
+/*
   const settings = {
     watermarkText: (els.watermarkText.value || '').trim() || DEFAULT_PATTERN.watermarkText
   };
 
-  const STORAGE_KEY = 'mv_helper_patterns_v2';
   refreshPostTexts();
   els.settingsStatus.innerHTML = '<span class="ok">設定を保存しました。</span>';
+  */
 }
 
 // 3-6. saveSettings / loadSettings / applySettings を作り直す
 
-function loadPersistedState() { }
-function savePersistedState() { }
-function getCurrentDraft() { }
-function readFormToPattern() { }
-function applyPatternToForm(pattern) { }
-function saveCurrentPattern() { }
-function switchPattern(patternId) { }
+function loadPersistedState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      applyPatternToForm(state.patterns[state.activePatternId]);
+      updatePatternTabs();
+      refreshTimePreview();
+      return;
+    }
+
+    const saved = JSON.parse(raw);
+
+    if (saved && saved.patterns) {
+      state.patterns = {
+        1: { ...DEFAULT_PATTERN, ...(saved.patterns[1] || saved.patterns['1'] || {}) },
+        2: { ...DEFAULT_PATTERN, ...(saved.patterns[2] || saved.patterns['2'] || {}) },
+        3: { ...DEFAULT_PATTERN, ...(saved.patterns[3] || saved.patterns['3'] || {}) }
+      };
+    }
+
+    if (saved && saved.drafts) {
+      state.drafts = {
+        1: saved.drafts[1] || saved.drafts['1'] || null,
+        2: saved.drafts[2] || saved.drafts['2'] || null,
+        3: saved.drafts[3] || saved.drafts['3'] || null
+      };
+    }
+
+    if (saved && saved.activePatternId) {
+      state.activePatternId = Number(saved.activePatternId) || 1;
+    }
+
+    applyPatternToForm(state.patterns[state.activePatternId]);
+    updatePatternTabs();
+    refreshTimePreview();
+  } catch (e) {
+    state.activePatternId = 1;
+    state.patterns = {
+      1: { ...DEFAULT_PATTERN },
+      2: { ...DEFAULT_PATTERN },
+      3: { ...DEFAULT_PATTERN }
+    };
+    state.drafts = {
+      1: null,
+      2: null,
+      3: null
+    };
+    applyPatternToForm(state.patterns[1]);
+    updatePatternTabs();
+    //refreshPostTexts();
+    refreshTimePreview();
+  }
+}
+
+function savePersistedState() {
+  const payload = {
+    activePatternId: state.activePatternId,
+    patterns: state.patterns,
+    drafts: state.drafts
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+function getCurrentDraft() {
+  return state.drafts[state.activePatternId];
+}
+
+function readFormToPattern() {
+  return {
+    watermarkText: (els.watermarkText.value || '').trim() || DEFAULT_PATTERN.watermarkText,
+    fontSize: Number(els.fontSizeInput.value) || DEFAULT_PATTERN.fontSize,
+    fontWeight: Number(els.fontWeightInput.value) || DEFAULT_PATTERN.fontWeight,
+    fontFamily: els.fontFamilySelect.value || DEFAULT_PATTERN.fontFamily,
+    textColor: els.textColorInput.value || DEFAULT_PATTERN.textColor,
+    outlineColor: els.outlineColorInput.value || DEFAULT_PATTERN.outlineColor,
+    outlineWidth: Number(els.outlineWidthInput.value) || 0,
+    highlightEnabled: !!els.highlightEnabledInput.checked,
+    highlightColor: els.highlightColorInput.value || DEFAULT_PATTERN.highlightColor,
+    highlightPadding: Number(els.highlightPaddingInput.value) || DEFAULT_PATTERN.highlightPadding,
+    opacity: Number(els.opacityInput.value) || DEFAULT_PATTERN.opacity,
+    positionX: Number(els.positionXInput.value) || 0,
+    positionY: Number(els.positionYInput.value) || 0,
+    postText: (els.postText.value || '').trim(),
+    includeCurrentTime: !!els.includeCurrentTimeInput.checked
+  };
+}
+
+function applyPatternToForm(pattern) {
+  const p = { ...DEFAULT_PATTERN, ...(pattern || {}) };
+
+  els.watermarkText.value = p.watermarkText;
+  els.fontSizeInput.value = p.fontSize;
+  els.fontWeightInput.value = p.fontWeight;
+  els.fontFamilySelect.value = p.fontFamily;
+  els.textColorInput.value = p.textColor;
+  els.outlineColorInput.value = p.outlineColor;
+  els.outlineWidthInput.value = p.outlineWidth;
+  els.highlightEnabledInput.checked = !!p.highlightEnabled;
+  els.highlightColorInput.value = p.highlightColor;
+  els.highlightPaddingInput.value = p.highlightPadding;
+  els.opacityInput.value = p.opacity;
+  els.positionXInput.value = p.positionX;
+  els.positionYInput.value = p.positionY;
+  els.postText.value = p.postText;
+  els.includeCurrentTimeInput.checked = !!p.includeCurrentTime;
+}
+
+function saveCurrentPattern() {
+  const pattern = readFormToPattern();
+  state.patterns[state.activePatternId] = { ...DEFAULT_PATTERN, ...pattern };
+  state.drafts[state.activePatternId] = pattern.postText || '';
+  savePersistedState();
+  //refreshPostTexts();
+  refreshTimePreview();
+  els.settingsStatus.innerHTML = '<span class="ok">このパターンを保存しました。</span>';
+}
+
+function switchPattern(patternId) {
+  const nextId = Number(patternId);
+  if (!state.patterns[nextId]) return;
+
+  // 切り替え前の編集中内容を保持
+  state.patterns[state.activePatternId] = {
+    ...DEFAULT_PATTERN,
+    ...readFormToPattern()
+  };
+  state.drafts[state.activePatternId] = els.postText.value || '';
+
+  state.activePatternId = nextId;
+
+  applyPatternToForm(state.patterns[nextId]);
+  updatePatternTabs();
+  savePersistedState();
+  //refreshPostTexts();
+  refreshTimePreview();
+  setStatus(els.settingsStatus, `パターン${nextId}に切り替えました。`);
+}
+
+function updatePatternTabs() {
+  els.patternTabs.forEach((tab) => {
+    const id = Number(tab.dataset.pattern);
+    tab.classList.toggle('active', id === state.activePatternId);
+  });
+}
 
 // 3-7. 投稿文まわりを再設計
 
@@ -129,7 +269,7 @@ function getCurrentTimeLabel() {
 function buildFinalPostText(pattern) {
   const parts = [];
 
-  if (/*pattern.includeCurrentTime*/ true) { //TODO readFormToPattern() の作成後
+  if (pattern.includeCurrentTime) {
     parts.push(getCurrentTimeLabel());
   }
 
@@ -140,18 +280,51 @@ function buildFinalPostText(pattern) {
 }
 
 function refreshPostTexts() {
-  console.log('refreshPostTexts');
   const pattern = readFormToPattern() || DEFAULT_PATTERN;
   const finalText = buildFinalPostText(pattern);
   els.postText.value = finalText;
 }
 
-function copyPostAndOpenX() {
+/*
+function refreshTimePreview() {
+  const includeCurrentTime = !!els.includeCurrentTimeInput.checked;
+
+  if (!includeCurrentTime) {
+    els.timePreview.textContent = '';
+    els.timePreview.classList.add('is-hidden');
+    return;
+  }
+
+  els.timePreview.textContent = getCurrentTimeLabel();
+  els.timePreview.classList.remove('is-hidden');
+}
+*/
+function refreshTimePreview() {
+  const includeCurrentTime = !!els.includeCurrentTimeInput.checked;
+  const currentLabel = getCurrentTimeLabel();
+
+  els.timePreview.textContent = currentLabel;
+
+  if (includeCurrentTime) {
+    els.timePreview.classList.remove('is-disabled-look');
+    els.timePreview.setAttribute('aria-hidden', 'false');
+  } else {
+    els.timePreview.classList.add('is-disabled-look');
+    els.timePreview.setAttribute('aria-hidden', 'true');
+  }
+}
+
+async function copyPostAndOpenX() {
   const pattern = readFormToPattern() || DEFAULT_PATTERN;
   const finalText = buildFinalPostText(pattern);
 
-  navigator.clipboard.writeText(finalText).catch(() => { });
-  window.open(buildTweetUrl(finalText), '_blank'/*, 'noopener'*/);
+  try {
+    await navigator.clipboard.writeText(finalText);
+  } catch (_) {
+    // 失敗してもXは開く
+  }
+
+  window.open(buildTweetUrl(finalText), '_blank', 'noopener');
 }
 
 // 3-8. 「チェックONなら投稿文欄に時刻文字列を含める」処理
@@ -182,26 +355,11 @@ function syncTimeLabelInPostText() {
 }
 
 function loadSettings() {
-  try {
-    const raw = localStorage.getItem('mv_helper_settings');
-    if (!raw) {
-      applySettings(DEFAULT_PATTERN);
-      return;
-    }
-
-    const saved = JSON.parse(raw);
-    applySettings({
-      watermarkText: saved.watermarkText || DEFAULT_PATTERN.watermarkText
-    });
-  } catch (e) {
-    applySettings(DEFAULT_PATTERN);
-  }
+  loadPersistedState();
 }
 
 function applySettings(settings) {
-  els.watermarkText.value = settings.watermarkText || DEFAULT_PATTERN.watermarkText;
-  refreshPostTexts();
-  //updatePostLinks();
+  applyPatternToForm(settings);
 }
 
 function setStatus(target, text, isError = false) {
@@ -300,8 +458,6 @@ function drawTextOnImage(img, text, style) {
 function patternToRenderStyle(pattern, imageWidth, imageHeight) {
   const baseWidth = 1080;
   const scale = imageWidth / baseWidth;
-  console.log('patternToRenderStyle', { imageWidth, imageHeight, scale });
-  console.log('fontSize ', Number(pattern.fontSize) * scale);
   return {
     fontSize: Number(pattern.fontSize) * scale,
     fontWeight: String(pattern.fontWeight),
@@ -373,7 +529,7 @@ async function generateImages() {
     setStatus(els.generateStatus, '画像を生成しました。');
     setStatus(
       els.resultStatus,
-      `生成完了\n${images.map(item => item.name).join('\n')}`
+      `生成完了\n${images.map(item => item.fileName).join('\n')}` //TODO ファイル名表示いらないかも
     );
   } catch (err) {
     setStatus(els.generateStatus, err.message || '画像生成に失敗しました。', true);
@@ -382,49 +538,6 @@ async function generateImages() {
 
 function getAllImages() {
   return state.images;
-}
-
-async function copyMvPostText() {
-  try {
-    refreshPostTexts();
-    await navigator.clipboard.writeText(els.mvPostText.value);
-    setStatus(els.mvActionStatus, 'MV投稿文をコピーしました。');
-    return true;
-  } catch (err) {
-    setStatus(els.mvActionStatus, 'コピーに失敗しました。手動でテキストを選択してください。', true);
-    return false;
-  }
-}
-
-async function copyStPostText() {
-  try {
-    refreshPostTexts();
-    await navigator.clipboard.writeText(els.stPostText.value);
-    setStatus(els.stActionStatus, '音源投稿文をコピーしました。');
-    return true;
-  } catch (err) {
-    setStatus(els.stActionStatus, 'コピーに失敗しました。手動でテキストを選択してください。', true);
-    return false;
-  }
-}
-
-function bindCopyAndOpen(linkEl, copyFn, statusEl, label) {
-  linkEl.addEventListener('click', async (event) => {
-    if (!linkEl.href || linkEl.href === '#') {
-      event.preventDefault();
-      setStatus(statusEl, `${label}の返信先投稿IDを入力してください。`, true);
-      return;
-    }
-
-    const ok = await copyFn();
-    if (!ok) {
-      // コピー失敗時は遷移を止める
-      event.preventDefault();
-      return;
-    }
-    // preventDefault はしない
-    // 実リンクのタップ遷移をそのまま生かす
-  });
 }
 
 async function shareFiles(files, titleText) {
@@ -536,19 +649,32 @@ async function shareAll() {
 
 els.generateBtn.addEventListener('click', generateImages);
 els.shareAllBtn.addEventListener('click', shareAll);
+els.copyPostBtn.addEventListener('click', copyPostAndOpenX);
+
+els.savePatternBtn.addEventListener('click', saveCurrentPattern);
+els.patternTabs.forEach((tab) => {
+  tab.addEventListener('click', () => {
+    switchPattern(tab.dataset.pattern);
+  });
+});
+
+/*
+els.watermarkText.addEventListener('input', saveSettings);
+els.fontSizeInput.addEventListener('input', saveSettings);
+els.fontWeightInput.addEventListener('input', saveSettings);
+els.fontFamilySelect.addEventListener('change', saveSettings);
+*/
 
 //els.mvPostText.addEventListener('input', updatePostLinks);
 //els.stPostText.addEventListener('input', updatePostLinks);
 //els.xIdInput.addEventListener('input', saveSettings);
+//els.includeCurrentTimeInput.addEventListener('change', syncTimeLabelInPostText);
 
-els.includeCurrentTimeInput.addEventListener('change', syncTimeLabelInPostText);
-
-//bindCopyAndOpen(els.mvActionLink, copyMvPostText, els.mvActionStatus, 'MV');
-//bindCopyAndOpen(els.stActionLink, copyStPostText, els.stActionStatus, '音源');
+els.includeCurrentTimeInput.addEventListener('change', () => {
+  refreshTimePreview();
+  //saveDraftState();
+});
 
 window.addEventListener('load', () => {
-  loadSettings();
-  refreshPostTexts();
-  //updatePostLinks();
-  //loadLatestReplyPostIds();
+  loadPersistedState();
 });

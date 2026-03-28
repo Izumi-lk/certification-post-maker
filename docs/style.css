@@ -46,7 +46,7 @@ body {
   font-size: 13px;
   color: var(--muted);
   margin-bottom: 18px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .card {
@@ -90,7 +90,7 @@ select,
 textarea {
   width: 100%;
   font-size: 16px;
-  padding: 12px 14px;
+  padding: 10px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #fff;
@@ -99,13 +99,60 @@ textarea {
 
 input[type="color"] {
   padding: 4px;
-  height: 48px;
+  height: 40px;
 }
 
 textarea {
-  min-height: 90px;
+  min-height: 40px;
   resize: vertical;
-  line-height: 1.6;
+  line-height: 1.5;
+}
+
+textarea#watermarkText {
+  max-height: 40px;
+  resize: vertical;
+  line-height: normal;
+}
+
+textarea#postText {
+  padding-top: 0px;
+}
+
+.post-time-preview {
+  width: 100%;
+  font-size: 16px;
+  padding: 10px 10px 2px 10px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  background: #fff;
+  color: var(--text);
+  line-height: 1.5;
+  /* min-height: 48px; */
+  white-space: pre-wrap;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+}
+
+#postText {
+  border-radius: 0 0 12px 12px;
+  margin-top: 0;
+}
+
+.post-time-preview,
+#postText {
+  box-shadow: none;
+}
+
+.post-time-preview + textarea {
+  border-top: none;
+}
+
+.post-time-preview.is-disabled-look {
+  color: #a6a6a6;
+  background: #faf7f8;
+  opacity: 0.9;
 }
 
 .btn {
@@ -138,7 +185,7 @@ textarea {
   margin-top: 12px;
   font-size: 13px;
   color: var(--muted);
-  line-height: 1.6;
+  line-height: 1.5;
   white-space: pre-line;
 }
 
@@ -202,7 +249,7 @@ textarea {
 .footer-note {
   font-size: 12px;
   color: var(--muted);
-  line-height: 1.7;
+  line-height: 1.5;
   margin-top: 12px;
 }
 
