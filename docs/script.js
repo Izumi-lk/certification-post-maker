@@ -1,7 +1,7 @@
 const DEFAULT_PATTERN = {
   watermarkText: '@sample',
   fontSize: 80,
-  fontWeight: 80,
+  fontWeight: 'Medium',
   fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
   lineHeight: '1.5',
   textColor: '#ffffff',
