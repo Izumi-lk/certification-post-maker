@@ -182,6 +182,84 @@ textarea#postText {
   white-space: pre-line;
 }
 
+.preview-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.preview-title {
+  margin-bottom: 0;
+}
+
+.preview-save-all-btn {
+  width: auto;
+  margin-top: 0;
+  padding: 10px 14px;
+  font-size: 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.preview-switcher {
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.preview-nav {
+  appearance: none;
+  border: 1px solid var(--accent);
+  background: #fff;
+  color: #b85d82;
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.preview-nav:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.preview-file-name {
+  min-width: 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-stage {
+  border: 1px solid var(--border);
+  border-radius: 0px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.preview-main-img {
+  width: 100%;
+  display: block;
+  background: #f8f8f8;
+  min-height: 240px;
+  object-fit: contain;
+}
+
+.preview-actions-single {
+  padding: 12px 0 0;
+}
+
 .preview-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -215,6 +293,8 @@ textarea#postText {
   gap: 10px;
   flex-wrap: wrap;
 }
+
+
 
 .mini-btn {
   appearance: none;

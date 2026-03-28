@@ -30,6 +30,8 @@ const DEFAULT_PATTERN = {
 };*/
 
 const STORAGE_KEY = 'helper_patterns';
+const SAMPLE_FILE_NAME = 'sample.png';
+const SAMPLE_SRC = './sample.png';
 
 const state = {
   activePatternId: 1,
@@ -46,7 +48,8 @@ const state = {
     3: null
   },
 
-  images: []
+  images: [],
+  currentPreviewIndex: 0
 };
 
 const els = {
@@ -55,8 +58,13 @@ const els = {
   copyPostBtn: document.getElementById('copyPostBtn'),
 
   imageFiles: document.getElementById('imageFiles'),
-  generateBtn: document.getElementById('generateBtn'),
   shareAllBtn: document.getElementById('shareAllBtn'),
+  shareCurrentBtn: document.getElementById('shareCurrentBtn'),
+
+  prevPreviewBtn: document.getElementById('prevPreviewBtn'),
+  nextPreviewBtn: document.getElementById('nextPreviewBtn'),
+  previewFileName: document.getElementById('previewFileName'),
+  previewMainImg: document.getElementById('previewMainImg'),
 
   watermarkText: document.getElementById('watermarkText'),
   fontSizeInput: document.getElementById('fontSizeInput'),
@@ -74,8 +82,6 @@ const els = {
   postText: document.getElementById('postText'),
   includeCurrentTimeInput: document.getElementById('includeCurrentTimeInput'),
   timePreview: document.getElementById('timePreview'),
-
-  previewGrid: document.getElementById('previewGrid'),
 
   generateStatus: document.getElementById('generateStatus'),
   resultStatus: document.getElementById('resultStatus'),
@@ -196,6 +202,7 @@ function saveCurrentPattern() {
   state.drafts[state.activePatternId] = pattern.postText || '';
   savePersistedState();
   refreshTimePreview();
+  schedulePreviewRerender(0);
   els.settingsStatus.innerHTML = '<span class="ok">このパターンを保存しました。</span>';
 }
 
@@ -217,6 +224,7 @@ function switchPattern(patternId) {
   savePersistedState();
   refreshTimePreview();
   setStatus(els.settingsStatus, `パターン${nextId}に切り替えました。`);
+  schedulePreviewRerender(0);
 }
 
 function updatePatternTabs() {
@@ -345,10 +353,6 @@ function dataUrlToFile(dataUrl, filename) {
 // 画像生成ロジック
 // TODO 複数行・座標・透明度・背景帯対応へ拡張
 function drawTextOnImage(img, text, style) {
-  // 複数行
-  // outlineWidth = 0 のとき stroke しない
-  // highlightEnabled のとき背景帯を描画
-  // opacity を rgba / globalAlpha に反映
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
@@ -357,26 +361,80 @@ function drawTextOnImage(img, text, style) {
 
   ctx.drawImage(img, 0, 0);
 
+  const rawText = typeof text === 'string' ? text : '';
+  const lines = rawText
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (!lines.length) {
+    return canvas.toDataURL('image/png');
+  }
+
+  ctx.save();
+
   ctx.font = `${style.fontWeight} ${style.fontSize}px ${style.fontFamily}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
   ctx.miterLimit = 2;
 
-  const x = style.x;
-  const y = style.y;
+  const lineHeight = style.fontSize * 1.2;
+  const textWidths = lines.map((line) => ctx.measureText(line).width);
+  const maxTextWidth = Math.max(...textWidths, 0);
 
-  ctx.shadowColor = style.shadowColor;
-  ctx.shadowBlur = style.shadowBlur;
+  const blockHeight = lineHeight * lines.length;
+  const blockTop = style.y - blockHeight / 2;
+  const blockBottom = style.y + blockHeight / 2;
 
-  ctx.lineWidth = style.lineWidth;
+  const paddingX = style.highlightPadding;
+  const paddingY = Math.max(style.highlightPadding * 0.7, style.fontSize * 0.18);
+  const rectX = style.x - maxTextWidth / 2 - paddingX;
+  const rectY = blockTop - paddingY;
+  const rectWidth = maxTextWidth + paddingX * 2;
+  const rectHeight = blockHeight + paddingY * 2;
+  const rectRadius = Math.max(style.fontSize * 0.2, 10);
+
+  ctx.globalAlpha = style.opacity;
+
+  if (style.highlightEnabled && rectWidth > 0 && rectHeight > 0) {
+    ctx.fillStyle = style.highlightColor;
+    drawRoundedRect(ctx, rectX, rectY, rectWidth, rectHeight, rectRadius);
+    ctx.fill();
+  }
+
   ctx.strokeStyle = style.strokeStyle;
-  ctx.strokeText(text, x, y);
-
+  ctx.lineWidth = style.lineWidth;
   ctx.fillStyle = style.fillStyle;
-  ctx.fillText(text, x, y);
+
+  lines.forEach((line, index) => {
+    const lineY = blockTop + lineHeight * index + lineHeight / 2;
+
+    if (style.lineWidth > 0) {
+      ctx.strokeText(line, style.x, lineY);
+    }
+
+    ctx.fillText(line, style.x, lineY);
+  });
+
+  ctx.restore();
 
   return canvas.toDataURL('image/png');
+}
+
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
 }
 
 function patternToRenderStyle(pattern, imageWidth, imageHeight) {
@@ -393,44 +451,56 @@ function patternToRenderStyle(pattern, imageWidth, imageHeight) {
     highlightEnabled: !!pattern.highlightEnabled,
     highlightColor: pattern.highlightColor,
     highlightPadding: Number(pattern.highlightPadding || 8) * scale,
-    opacity: Number(pattern.opacity) / 100,
+    //opacity: Number(pattern.opacity) / 100,
+    opacity: Math.max(0, Math.min(1, Number(pattern.opacity) / 100)),
     x: imageWidth / 2 + (Number(pattern.positionX) / 50) * (imageWidth / 2),
     y: imageHeight / 2 + (Number(pattern.positionY) / 50) * (imageHeight / 2)
   };
 }
 
 function resetStateImages() {
-  state.image1 = null;
-  state.image2 = null;
-  state.image3 = null;
-  state.image4 = null;
+  state.images = [];
+  state.currentPreviewIndex = 0;
 }
 
-async function generateImages() {
-  try {
-    setStatus(els.generateStatus, '画像を生成中...');
-    setStatus(els.resultStatus, '');
-    els.shareAllBtn.disabled = true;
-    els.previewGrid.innerHTML = '';
-    resetStateImages();
+//async function generateImages() {
+async function generateImages(options = {}) {
+  const {
+    preserveIndex = false,
+    silentStatus = false
+  } = options;
 
+  try {
+    if (!silentStatus) {
+      setStatus(els.generateStatus, '画像を生成中...');
+      setStatus(els.resultStatus, '');
+    }
+    els.shareAllBtn.disabled = true;
+    els.shareCurrentBtn.disabled = true;
+
+    const previousIndex = state.currentPreviewIndex;
     const files = Array.from(els.imageFiles.files || []);
 
     if (files.length < 1 || files.length > 4) {
+      resetStateImages();
+      renderPreviewViewer();
       throw new Error('画像は1〜4枚選択してください。');
     }
 
     const pattern = readFormToPattern() || DEFAULT_PATTERN;
     const loadedImages = await Promise.all(
-      files.map(file => loadImageFromFile(file))
+      files.map((file) => loadImageFromFile(file))
     );
     const timestamp = getTimestampString();
 
-    // 加工済み画像を配列で作る
     state.images = loadedImages.map((img, index) => {
       const renderStyle = patternToRenderStyle(pattern, img.width, img.height);
       const dataUrl = drawTextOnImage(img, pattern.watermarkText, renderStyle);
-      const fileName = escapeFileName(`${timestamp}_${index + 1}.png`);
+      const originalFile = files[index];
+      const baseName = originalFile?.name
+        ? originalFile.name.replace(/\.[^.]+$/, '')
+        : `${index + 1}`;
+      const fileName = escapeFileName(`${timestamp}_${baseName}.png`);
       const file = dataUrlToFile(dataUrl, fileName);
 
       return {
@@ -441,23 +511,85 @@ async function generateImages() {
       };
     });
 
-    renderPreview();
-    els.shareAllBtn.disabled = false;
-    els.imageFiles.value = '';
+    state.currentPreviewIndex = preserveIndex ? previousIndex : 0;
+    renderPreviewViewer();
 
-    const images = getAllImages();
-    setStatus(els.generateStatus, '画像を生成しました。');
-    setStatus(
-      els.resultStatus,
-      `生成完了\n${images.map(item => item.fileName).join('\n')}`
-    );
+    els.shareAllBtn.disabled = false;
+    els.shareCurrentBtn.disabled = false;
+
+    if (!silentStatus) {
+      setStatus(els.generateStatus, '画像を生成しました。');
+      setStatus(
+        els.resultStatus,
+        `生成完了\n${state.images.map((item) => item.fileName).join('\n')}`
+      );
+    }
   } catch (err) {
-    setStatus(els.generateStatus, err.message || '画像生成に失敗しました。', true);
+    if (!silentStatus) {
+      setStatus(
+        els.generateStatus,
+        err.message || '画像生成に失敗しました。',
+        true
+      );
+    }
   }
 }
 
 function getAllImages() {
   return state.images;
+}
+
+function getCurrentPreviewItem() {
+  if (!state.images || state.images.length === 0) return null;
+  return state.images[state.currentPreviewIndex] || null;
+}
+
+function normalizePreviewIndex() {
+  if (!state.images || state.images.length === 0) {
+    state.currentPreviewIndex = 0;
+    return;
+  }
+
+  if (state.currentPreviewIndex < 0) {
+    state.currentPreviewIndex = 0;
+  }
+
+  if (state.currentPreviewIndex > state.images.length - 1) {
+    state.currentPreviewIndex = state.images.length - 1;
+  }
+}
+
+function renderEmptyPreview() {
+  els.previewFileName.textContent = SAMPLE_FILE_NAME;
+  els.previewMainImg.src = SAMPLE_SRC;
+  els.previewMainImg.alt = 'サンプル画像';
+  els.prevPreviewBtn.disabled = true;
+  els.nextPreviewBtn.disabled = true;
+  els.shareAllBtn.disabled = true;
+  els.shareCurrentBtn.disabled = true;
+}
+
+function renderPreviewViewer() {
+  const images = state.images || [];
+
+  if (!images.length) {
+    renderEmptyPreview();
+    return;
+  }
+
+  normalizePreviewIndex();
+
+  const current = getCurrentPreviewItem();
+  const hasMultiple = images.length > 1;
+
+  els.previewFileName.textContent = current.fileName || `画像${state.currentPreviewIndex + 1}`;
+  els.previewMainImg.src = current.dataUrl;
+  els.previewMainImg.alt = `${state.currentPreviewIndex + 1}枚目のプレビュー画像`;
+
+  els.prevPreviewBtn.disabled = !hasMultiple || state.currentPreviewIndex === 0;
+  els.nextPreviewBtn.disabled = !hasMultiple || state.currentPreviewIndex === images.length - 1;
+  els.shareAllBtn.disabled = false;
+  els.shareCurrentBtn.disabled = false;
 }
 
 async function shareFiles(files, titleText) {
@@ -492,6 +624,7 @@ async function shareFiles(files, titleText) {
   }
 }
 
+// 不要
 function createPreviewBox(item, labelPrefix) {
   const box = document.createElement('div');
   box.className = 'preview-box';
@@ -524,6 +657,7 @@ function createPreviewBox(item, labelPrefix) {
   return box;
 }
 
+//不要
 function renderPreview() {
   els.previewGrid.innerHTML = '';
 
@@ -544,14 +678,31 @@ function renderPreview() {
   });
 }
 
-function renderMvPreviewList() {
-  els.previewGrid.innerHTML = '';
-  const images = getMvImages();
+async function shareCurrentPreview() {
+  const current = getCurrentPreviewItem();
 
-  images.forEach((item, index) => {
-    const label = `画像 ${index + 1}`;
-    els.previewGrid.appendChild(createPreviewBox(item, label));
-  });
+  if (!current || !current.file) {
+    setStatus(els.resultStatus, '先に画像を生成してください。', true);
+    return;
+  }
+
+  await shareFiles([current.file], current.fileName || 'image.png');
+}
+
+function showPrevPreview() {
+  if (!state.images || state.images.length === 0) return;
+  if (state.currentPreviewIndex <= 0) return;
+
+  state.currentPreviewIndex -= 1;
+  renderPreviewViewer();
+}
+
+function showNextPreview() {
+  if (!state.images || state.images.length === 0) return;
+  if (state.currentPreviewIndex >= state.images.length - 1) return;
+
+  state.currentPreviewIndex += 1;
+  renderPreviewViewer();
 }
 
 async function shareAll() {
@@ -567,8 +718,52 @@ async function shareAll() {
   await shareFiles(files, 'Streaming Images');
 }
 
-els.generateBtn.addEventListener('click', generateImages);
+let rerenderTimer = null;
+
+function hasSelectedImages() {
+  return !!(els.imageFiles.files && els.imageFiles.files.length > 0);
+}
+
+function persistCurrentEditorState() {
+  const pattern = readFormToPattern();
+  state.patterns[state.activePatternId] = { ...DEFAULT_PATTERN, ...pattern };
+  state.drafts[state.activePatternId] = pattern.postText || '';
+  savePersistedState();
+}
+
+function schedulePreviewRerender(delay = 120) {
+  if (!hasSelectedImages()) {
+    return;
+  }
+
+  clearTimeout(rerenderTimer);
+  rerenderTimer = setTimeout(async () => {
+    await generateImages({ preserveIndex: true, silentStatus: true });
+  }, delay);
+}
+
+async function handleImageFilesChange() {
+  await generateImages();
+}
+
+function handleEditorValueChange() {
+  persistCurrentEditorState();
+  refreshTimePreview();
+  schedulePreviewRerender();
+}
+
+function handlePostTextChange() {
+  persistCurrentEditorState();
+}
+
+els.imageFiles.addEventListener('change', handleImageFilesChange);
+els.imageFiles.addEventListener('click', () => {
+  els.imageFiles.value = '';
+});
 els.shareAllBtn.addEventListener('click', shareAll);
+els.shareCurrentBtn.addEventListener('click', shareCurrentPreview);
+els.prevPreviewBtn.addEventListener('click', showPrevPreview);
+els.nextPreviewBtn.addEventListener('click', showNextPreview);
 els.copyPostBtn.addEventListener('click', copyPostAndOpenX);
 
 els.savePatternBtn.addEventListener('click', saveCurrentPattern);
@@ -578,10 +773,33 @@ els.patternTabs.forEach((tab) => {
   });
 });
 
-els.includeCurrentTimeInput.addEventListener('change', () => {
-  refreshTimePreview();
+[
+  els.watermarkText,
+  els.fontSizeInput,
+  els.fontWeightInput,
+  els.fontFamilySelect,
+  els.textColorInput,
+  els.outlineColorInput,
+  els.outlineWidthInput,
+  els.highlightEnabledInput,
+  els.highlightColorInput,
+  els.highlightPaddingInput,
+  els.opacityInput,
+  els.positionXInput,
+  els.positionYInput,
+  els.includeCurrentTimeInput
+].forEach((el) => {
+  const eventName =
+    el.type === 'checkbox' || el.tagName === 'SELECT' || el.type === 'color'
+      ? 'change'
+      : 'input';
+
+  el.addEventListener(eventName, handleEditorValueChange);
 });
+
+els.postText.addEventListener('input', handlePostTextChange);
 
 window.addEventListener('load', () => {
   loadPersistedState();
+  renderPreviewViewer();
 });

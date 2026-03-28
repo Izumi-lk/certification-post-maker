@@ -28,6 +28,47 @@
       <div class="status" id="settingsStatus"></div>
     </div>
 
+    <!-- 画像アップロード -->
+    <div class="card">
+      <div class="section-title">画像アップロード</div>
+
+      <div class="field">
+        <label class="label" for="imageFiles">画像アップロード</label>
+        <input type="file" id="imageFiles" accept="image/*" multiple />
+        <div class="hint">1〜4枚まで選択できます。選択したすべての画像に同じ設定を適用します。</div>
+      </div>
+    </div>
+
+    <!-- プレビュー -->
+    <div class="card">
+      <div class="preview-topbar">
+        <div class="section-title preview-title">プレビュー</div>
+        <button class="btn secondary preview-save-all-btn" id="shareAllBtn" type="button">
+          まとめて保存
+        </button>
+      </div>
+
+      <div class="preview-switcher">
+        <button class="preview-nav" id="prevPreviewBtn" type="button" aria-label="前の画像">◀</button>
+        <div class="preview-file-name" id="previewFileName">sample.png</div>
+        <button class="preview-nav" id="nextPreviewBtn" type="button" aria-label="次の画像">▶</button>
+      </div>
+
+      <div class="preview-stage">
+        <img class="preview-main-img" id="previewMainImg" src="" alt="サンプル画像" />
+      </div>
+
+      <div class="preview-actions preview-actions-single">
+        <button class="mini-btn" id="shareCurrentBtn" type="button">
+          この画像を保存 / 共有
+        </button>
+      </div>
+
+      <!-- ステータス表示はしない -->
+      <div class="status" id="generateStatus" style="display: none;"></div>
+      <div class="status" id="resultStatus" style="display: none;"></div>
+    </div>
+
     <!-- 設定編集 -->
     <details class="card collapsible-card">
       <summary class="collapse-summary">
@@ -126,34 +167,10 @@
             現在時刻の自動生成文字列を先頭に含める
           </label>
         </div>
-      <button class="btn" id="savePatternBtn" type="button">編集内容を保存</button>
+        <button class="btn" id="savePatternBtn" type="button">編集内容を保存</button>
       </div>
     </details>
 
-    <!-- 画像アップロード -->
-    <div class="card">
-      <div class="section-title">画像アップロード</div>
-
-      <div class="field">
-        <label class="label" for="imageFiles">画像アップロード</label>
-        <input type="file" id="imageFiles" accept="image/*" multiple />
-        <div class="hint">1〜4枚まで選択できます。選択したすべての画像に同じ設定を適用します。</div>
-      </div>
-
-      <button class="btn" id="generateBtn" type="button">画像を生成</button>
-      <button class="btn secondary" id="shareAllBtn" type="button">まとめて保存 / 共有</button>
-
-      <div class="status" id="generateStatus"></div>
-      <div class="status" id="resultStatus"></div>
-    </div>
-
-    <!-- 画像生成結果 -->
-    <div class="card">
-      <div class="section-title">生成結果</div>
-      <div class="preview-grid" id="previewGrid">
-        <!-- JSでプレビューを描画 -->
-      </div>
-    </div>
   </div>
   <script src="script.js" defer></script>
 </body>
@@ -163,4 +180,5 @@
     <div class="footer-item">© 2026 Izumi</div>
   </div>
 </footer>
+
 </html>
