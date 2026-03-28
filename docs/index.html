@@ -58,6 +58,56 @@
         <img class="preview-main-img" id="previewMainImg" src="" alt="サンプル画像" />
       </div>
 
+      <div class="toolbar-embed">
+        <div class="dock-panel">
+          <div class="panel-top">
+            <div class="panel-title" id="toolbarPanelTitle">文字サイズ</div>
+            <div class="panel-value" id="toolbarPanelValue">32</div>
+          </div>
+
+          <div class="slider-wrap">
+            <input type="range" id="toolbarSlider" min="10" max="160" step="1" value="32" />
+            <div class="slider-labels">
+              <span id="toolbarMinLabel">10</span>
+              <span id="toolbarHintLabel">ドラッグして調整</span>
+              <span id="toolbarMaxLabel">160</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dock-tools">
+          <button class="tool-btn active" type="button" data-tool="fontSize">
+            <span class="tool-icon size"></span>
+            <span class="tool-label">サイズ</span>
+          </button>
+
+          <button class="tool-btn" type="button" data-tool="opacity">
+            <span class="tool-icon opacity"></span>
+            <span class="tool-label">透明度</span>
+          </button>
+
+          <button class="tool-btn" type="button" data-tool="outlineWidth">
+            <span class="tool-icon outline"></span>
+            <span class="tool-label">枠</span>
+          </button>
+
+          <button class="tool-btn" type="button" data-tool="highlightPadding">
+            <span class="tool-icon padding"></span>
+            <span class="tool-label">余白</span>
+          </button>
+
+          <button class="tool-btn" type="button" data-tool="positionX">
+            <span class="tool-icon move-x"></span>
+            <span class="tool-label">X</span>
+          </button>
+
+          <button class="tool-btn" type="button" data-tool="positionY">
+            <span class="tool-icon move-y"></span>
+            <span class="tool-label">Y</span>
+          </button>
+        </div>
+      </div>
+
       <div class="preview-actions preview-actions-single">
         <button class="mini-btn" id="shareCurrentBtn" type="button">
           この画像を保存 / 共有
@@ -87,7 +137,7 @@
         <div class="row two-col-mobile">
           <div class="field">
             <label class="label" for="fontSizeInput">文字サイズ</label>
-            <input type="number" id="fontSizeInput" min="1" value="32" />
+            <input type="number" id="fontSizeInput" min="1" value="32" disabled/>
           </div>
 
           <div class="field">
@@ -105,7 +155,7 @@
             <input type="color" id="textColorInput" value="#ffffff" />
           </div>
 
-          <div class="field">
+          <div class="field" disabled>
             <label class="label" for="opacityInput">透明度（0〜100）</label>
             <input type="number" id="opacityInput" min="0" max="100" value="85" />
           </div>
@@ -117,7 +167,7 @@
 
           <div class="field">
             <label class="label" for="outlineWidthInput">アウトライン太さ</label>
-            <input type="number" id="outlineWidthInput" min="0" value="20" />
+            <input type="number" id="outlineWidthInput" min="0" value="20" disabled/>
           </div>
 
           <div class="field">
@@ -158,7 +208,7 @@
 
         <div class="field">
           <label class="check">
-            <input type="checkbox" id="highlightEnabledInput" checked />
+            <input type="checkbox" id="highlightEnabledInput" checked disabled/>
             ハイライトを表示する
           </label>
         </div>
@@ -170,7 +220,7 @@
           </div>
           <div class="field">
             <label class="label" for="highlightPaddingInput">背景帯の余白量</label>
-            <input type="number" id="highlightPaddingInput" value="8" />
+            <input type="number" id="highlightPaddingInput" value="8" disabled/>
           </div>
         </div>
         <!-- 位置 -->
@@ -178,13 +228,14 @@
         <div class="row two-col-mobile">
           <div class="field">
             <label class="label" for="positionXInput">X座標（-50〜50）</label>
-            <input type="number" id="positionXInput" min="-50" max="50" value="0" />
+            <input type="number" id="positionXInput" min="-50" max="50" value="0" disabled/>
           </div>
           <div class="field">
             <label class="label" for="positionYInput">Y座標（-50〜50）</label>
-            <input type="number" id="positionYInput" min="-50" max="50" value="0" />
+            <input type="number" id="positionYInput" min="-50" max="50" value="0" disabled/>
           </div>
         </div>
+
         <!-- 投稿文 -->
         <div class="section-title subheading">投稿文</div>
         <div class="field">
