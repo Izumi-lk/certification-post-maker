@@ -29,13 +29,6 @@ body {
   padding: 20px 16px 40px;
 }
 
-/* モバイル優先に変更
-.wrap {
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 16px 16px 40px;
-}*/
-
 .title {
   font-size: 24px;
   font-weight: 800;

@@ -1,18 +1,18 @@
 const DEFAULT_PATTERN = {
-  watermarkText: '@inu_5122',
+  watermarkText: '@sample',
   fontSize: 80,
-  fontWeight: 800,
+  fontWeight: 80,
   fontFamily: 'Arial, sans-serif',
   textColor: '#ffffff',
   outlineColor: '#ff2b88',
-  outlineWidth: 2,
+  outlineWidth: 10,
   highlightEnabled: true,
   highlightColor: '#ffe4f0',
   highlightPadding: 8,
   opacity: 100,
   positionX: 0,
   positionY: 0,
-  postText: 'テストテキスト\n#내가_살아있다는_증거_MV_스트리밍',
+  postText: '例：テキスト\n#ハッシュタグ',
   includeCurrentTime: true
 };
 
@@ -29,7 +29,7 @@ const DEFAULT_PATTERN = {
   shadowBlur: 0
 };*/
 
-const STORAGE_KEY = 'mv_helper_patterns_v2';
+const STORAGE_KEY = 'helper_patterns';
 
 const state = {
   activePatternId: 1,
@@ -46,17 +46,10 @@ const state = {
     3: null
   },
 
-  images: [] // 最大4件
+  images: []
 };
 
 const els = {
-  mvActionStatus: document.getElementById('mvActionStatus'),
-  stActionStatus: document.getElementById('stActionStatus'),
-  generateStatus: document.getElementById('generateStatus'),
-  resultStatus: document.getElementById('resultStatus'),
-  settingsStatus: document.getElementById('settingsStatus'),
-
-  //新規追加
   patternTabs: document.querySelectorAll('.tab'),
   savePatternBtn: document.getElementById('savePatternBtn'),
   copyPostBtn: document.getElementById('copyPostBtn'),
@@ -89,19 +82,7 @@ const els = {
   settingsStatus: document.getElementById('settingsStatus')
 };
 
-function saveSettings() {
-  saveCurrentPattern();
-/*
-  const settings = {
-    watermarkText: (els.watermarkText.value || '').trim() || DEFAULT_PATTERN.watermarkText
-  };
-
-  refreshPostTexts();
-  els.settingsStatus.innerHTML = '<span class="ok">設定を保存しました。</span>';
-  */
-}
-
-// 3-6. saveSettings / loadSettings / applySettings を作り直す
+// パターンの保存・切り替え
 
 function loadPersistedState() {
   try {
@@ -152,7 +133,6 @@ function loadPersistedState() {
     };
     applyPatternToForm(state.patterns[1]);
     updatePatternTabs();
-    //refreshPostTexts();
     refreshTimePreview();
   }
 }
@@ -215,7 +195,6 @@ function saveCurrentPattern() {
   state.patterns[state.activePatternId] = { ...DEFAULT_PATTERN, ...pattern };
   state.drafts[state.activePatternId] = pattern.postText || '';
   savePersistedState();
-  //refreshPostTexts();
   refreshTimePreview();
   els.settingsStatus.innerHTML = '<span class="ok">このパターンを保存しました。</span>';
 }
@@ -236,7 +215,6 @@ function switchPattern(patternId) {
   applyPatternToForm(state.patterns[nextId]);
   updatePatternTabs();
   savePersistedState();
-  //refreshPostTexts();
   refreshTimePreview();
   setStatus(els.settingsStatus, `パターン${nextId}に切り替えました。`);
 }
@@ -248,11 +226,7 @@ function updatePatternTabs() {
   });
 }
 
-// 3-7. 投稿文まわりを再設計
-
-//refreshPostTexts()
-//updatePostLinks()
-
+// 投稿文まわりのロジック
 function getCurrentTimeLabel() {
   const now = new Date();
   const month = now.getMonth() + 1;
@@ -285,20 +259,6 @@ function refreshPostTexts() {
   els.postText.value = finalText;
 }
 
-/*
-function refreshTimePreview() {
-  const includeCurrentTime = !!els.includeCurrentTimeInput.checked;
-
-  if (!includeCurrentTime) {
-    els.timePreview.textContent = '';
-    els.timePreview.classList.add('is-hidden');
-    return;
-  }
-
-  els.timePreview.textContent = getCurrentTimeLabel();
-  els.timePreview.classList.remove('is-hidden');
-}
-*/
 function refreshTimePreview() {
   const includeCurrentTime = !!els.includeCurrentTimeInput.checked;
   const currentLabel = getCurrentTimeLabel();
@@ -327,41 +287,6 @@ async function copyPostAndOpenX() {
   window.open(buildTweetUrl(finalText), '_blank', 'noopener');
 }
 
-// 3-8. 「チェックONなら投稿文欄に時刻文字列を含める」処理
-
-function syncTimeLabelInPostText() {
-  const checked = els.includeCurrentTimeInput.checked;
-  const currentValue = els.postText.value || '';
-  const lines = currentValue.split('\n');
-  const timeLabel = getCurrentTimeLabel();
-
-  const firstLine = lines[0]?.trim();
-  const looksLikeTime = /^\d{1,2}\/\d{1,2}\s+\d{1,2}(am|pm)$/i.test(firstLine);
-
-  if (checked) {
-    if (!looksLikeTime) {
-      els.postText.value = currentValue.trim()
-        ? `${timeLabel}\n${currentValue}`
-        : timeLabel;
-    } else {
-      lines[0] = timeLabel;
-      els.postText.value = lines.join('\n');
-    }
-  } else {
-    if (looksLikeTime) {
-      els.postText.value = lines.slice(1).join('\n');
-    }
-  }
-}
-
-function loadSettings() {
-  loadPersistedState();
-}
-
-function applySettings(settings) {
-  applyPatternToForm(settings);
-}
-
 function setStatus(target, text, isError = false) {
   target.textContent = text || '';
   target.style.color = isError ? '#c0392b' : '';
@@ -381,11 +306,9 @@ function getTimestampString() {
   return `${yyyy}${mm}${dd}_${hh}${mi}`;
 }
 
-
 function buildTweetUrl(text) {
   return `https://x.com/intent/tweet?text=${encodeURIComponent(text || '')}`;
 }
-
 
 function loadImageFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -419,7 +342,8 @@ function dataUrlToFile(dataUrl, filename) {
   return new File([u8arr], filename, { type: mime });
 }
 
-// 3-11. drawCenteredTextOnImage を複数行・座標・透明度・背景帯対応へ拡張
+// 画像生成ロジック
+// TODO 複数行・座標・透明度・背景帯対応へ拡張
 function drawTextOnImage(img, text, style) {
   // 複数行
   // outlineWidth = 0 のとき stroke しない
@@ -475,9 +399,6 @@ function patternToRenderStyle(pattern, imageWidth, imageHeight) {
   };
 }
 
-// 不要
-function drawCenteredTextOnImage(img, text, style) { }
-
 function resetStateImages() {
   state.image1 = null;
   state.image2 = null;
@@ -495,7 +416,6 @@ async function generateImages() {
 
     const files = Array.from(els.imageFiles.files || []);
 
-    // 3-9. 画像生成ロジックを 1〜4枚対応に変更
     if (files.length < 1 || files.length > 4) {
       throw new Error('画像は1〜4枚選択してください。');
     }
@@ -529,7 +449,7 @@ async function generateImages() {
     setStatus(els.generateStatus, '画像を生成しました。');
     setStatus(
       els.resultStatus,
-      `生成完了\n${images.map(item => item.fileName).join('\n')}` //TODO ファイル名表示いらないかも
+      `生成完了\n${images.map(item => item.fileName).join('\n')}`
     );
   } catch (err) {
     setStatus(els.generateStatus, err.message || '画像生成に失敗しました。', true);
@@ -556,7 +476,7 @@ async function shareFiles(files, titleText) {
       text: '画像を保存または共有してください。'
     });
 
-    setStatus(els.resultStatus, '共有シートを開きました。');
+    setStatus(els.resultStatus, '共有しました。');
   } catch (err) {
     const msg = String(err && err.message ? err.message : err);
 
@@ -658,21 +578,8 @@ els.patternTabs.forEach((tab) => {
   });
 });
 
-/*
-els.watermarkText.addEventListener('input', saveSettings);
-els.fontSizeInput.addEventListener('input', saveSettings);
-els.fontWeightInput.addEventListener('input', saveSettings);
-els.fontFamilySelect.addEventListener('change', saveSettings);
-*/
-
-//els.mvPostText.addEventListener('input', updatePostLinks);
-//els.stPostText.addEventListener('input', updatePostLinks);
-//els.xIdInput.addEventListener('input', saveSettings);
-//els.includeCurrentTimeInput.addEventListener('change', syncTimeLabelInPostText);
-
 els.includeCurrentTimeInput.addEventListener('change', () => {
   refreshTimePreview();
-  //saveDraftState();
 });
 
 window.addEventListener('load', () => {
