@@ -1,7 +1,7 @@
 const DEFAULT_PATTERN = {
   watermarkText: '@sample',
   fontSize: 80,
-  fontWeight: 'Medium',
+  fontWeight: 500,
   fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
   lineHeight: '1.5',
   textColor: '#ffffff',
@@ -36,6 +36,7 @@ const SAMPLE_SRC = './sample.png';
 
 const state = {
   activePatternId: 1,
+  activeToolbarTool: 'fontSize',
 
   patterns: {
     1: { ...DEFAULT_PATTERN },
@@ -68,27 +69,152 @@ const els = {
   previewMainImg: document.getElementById('previewMainImg'),
 
   watermarkText: document.getElementById('watermarkText'),
-  fontSizeInput: document.getElementById('fontSizeInput'),
+  // fontSizeInput: document.getElementById('fontSizeInput'),
   fontWeightInput: document.getElementById('fontWeightInput'),
   fontFamilySelect: document.getElementById('fontFamilySelect'),
   lineHeightSelect: document.getElementById('lineHeightSelect'),
   textColorInput: document.getElementById('textColorInput'),
   outlineColorInput: document.getElementById('outlineColorInput'),
-  outlineWidthInput: document.getElementById('outlineWidthInput'),
+  // outlineWidthInput: document.getElementById('outlineWidthInput'),
   highlightEnabledInput: document.getElementById('highlightEnabledInput'),
-  highlightPaddingInput: document.getElementById('highlightPaddingInput'),
+  // highlightPaddingInput: document.getElementById('highlightPaddingInput'),
   highlightColorInput: document.getElementById('highlightColorInput'),
-  opacityInput: document.getElementById('opacityInput'),
-  positionXInput: document.getElementById('positionXInput'),
-  positionYInput: document.getElementById('positionYInput'),
+  // opacityInput: document.getElementById('opacityInput'),
+  // positionXInput: document.getElementById('positionXInput'),
+  // positionYInput: document.getElementById('positionYInput'),
   postText: document.getElementById('postText'),
   includeCurrentTimeInput: document.getElementById('includeCurrentTimeInput'),
   timePreview: document.getElementById('timePreview'),
 
   generateStatus: document.getElementById('generateStatus'),
   resultStatus: document.getElementById('resultStatus'),
-  settingsStatus: document.getElementById('settingsStatus')
+  settingsStatus: document.getElementById('settingsStatus'),
+
+  toolbarPanelTitle: document.getElementById('toolbarPanelTitle'),
+  toolbarPanelValue: document.getElementById('toolbarPanelValue'),
+  toolbarSlider: document.getElementById('toolbarSlider'),
+  toolbarMinLabel: document.getElementById('toolbarMinLabel'),
+  toolbarMaxLabel: document.getElementById('toolbarMaxLabel'),
+  toolbarHintLabel: document.getElementById('toolbarHintLabel'),
+  toolbarToolButtons: document.querySelectorAll('.tool-btn'),
 };
+
+function getActivePattern() {
+  return state.patterns[state.activePatternId] || { ...DEFAULT_PATTERN };
+}
+
+function updateActivePattern(patch) {
+  state.patterns[state.activePatternId] = {
+    ...DEFAULT_PATTERN,
+    ...state.patterns[state.activePatternId],
+    ...patch
+  };
+  savePersistedState();
+}
+
+// ツールバーの設定
+const TOOLBAR_TOOL_CONFIG = {
+  fontSize: {
+    label: '文字サイズ',
+    min: 10,
+    max: 160,
+    step: 1,
+    hint: 'ドラッグして調整',
+    key: 'fontSize',
+    formatValue: (value) => String(value)
+  },
+  opacity: {
+    label: '透明度',
+    min: 0,
+    max: 100,
+    step: 1,
+    hint: '透明 ← → はっきり',
+    key: 'opacity',
+    formatValue: (value) => `${value}%`
+  },
+  outlineWidth: {
+    label: 'アウトライン太さ',
+    min: 0,
+    max: 40,
+    step: 1,
+    hint: 'なし ← → 太め',
+    key: 'outlineWidth',
+    formatValue: (value) => String(value)
+  },
+  highlightPadding: {
+    label: '背景帯の余白量',
+    min: 0,
+    max: 30,
+    step: 1,
+    hint: '狭い ← → 広い',
+    key: 'highlightPadding',
+    formatValue: (value) => String(value)
+  },
+  positionX: {
+    label: 'X座標',
+    min: -50,
+    max: 50,
+    step: 1,
+    hint: '左 ← → 右',
+    key: 'positionX',
+    formatValue: (value) => String(value)
+  },
+  positionY: {
+    label: 'Y座標',
+    min: -50,
+    max: 50,
+    step: 1,
+    hint: '下 ← → 上',
+    key: 'positionY',
+    formatValue: (value) => String(value)
+  }
+};
+
+function updateToolbarUI() {
+  const toolKey = state.activeToolbarTool;
+  const config = TOOLBAR_TOOL_CONFIG[toolKey];
+  if (!config) return;
+
+  const pattern = getActivePattern();
+  const rawValue = pattern[config.key];
+  const value = Number(rawValue ?? DEFAULT_PATTERN[config.key] ?? 0);
+
+  els.toolbarPanelTitle.textContent = config.label;
+  els.toolbarPanelValue.textContent = config.formatValue(value);
+  els.toolbarSlider.min = String(config.min);
+  els.toolbarSlider.max = String(config.max);
+  els.toolbarSlider.step = String(config.step);
+  els.toolbarSlider.value = String(value);
+  els.toolbarMinLabel.textContent = String(config.min);
+  els.toolbarMaxLabel.textContent = String(config.max);
+  els.toolbarHintLabel.textContent = config.hint;
+
+  els.toolbarToolButtons.forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.tool === toolKey);
+  });
+}
+
+function switchToolbarTool(toolKey) {
+  if (!TOOLBAR_TOOL_CONFIG[toolKey]) return;
+  state.activeToolbarTool = toolKey;
+  updateToolbarUI();
+}
+
+function handleToolbarSliderInput() {
+  const toolKey = state.activeToolbarTool;
+  const config = TOOLBAR_TOOL_CONFIG[toolKey];
+  if (!config) return;
+
+  const value = Number(els.toolbarSlider.value);
+  updateActivePattern({ [config.key]: value });
+  updateToolbarUI();
+
+  if (hasSelectedImages()) {
+    schedulePreviewRerender();
+  } else {
+    renderSamplePreview();
+  }
+}
 
 // パターンの保存・切り替え
 
@@ -127,6 +253,7 @@ function loadPersistedState() {
     applyPatternToForm(state.patterns[state.activePatternId]);
     updatePatternTabs();
     refreshTimePreview();
+    updateToolbarUI();
   } catch (e) {
     state.activePatternId = 1;
     state.patterns = {
@@ -142,6 +269,7 @@ function loadPersistedState() {
     applyPatternToForm(state.patterns[1]);
     updatePatternTabs();
     refreshTimePreview();
+    updateToolbarUI();
   }
 }
 
@@ -158,24 +286,25 @@ function getCurrentDraft() {
   return state.drafts[state.activePatternId];
 }
 
-function readFormToPattern() {
+function readFormToPartialPattern() {
   return {
     watermarkText: (els.watermarkText.value || '').trim() || DEFAULT_PATTERN.watermarkText,
-    fontSize: Number(els.fontSizeInput.value) || DEFAULT_PATTERN.fontSize,
     fontWeight: Number(els.fontWeightInput.value) || DEFAULT_PATTERN.fontWeight,
     fontFamily: els.fontFamilySelect.value || DEFAULT_PATTERN.fontFamily,
     lineHeight: els.lineHeightSelect.value || DEFAULT_PATTERN.lineHeight,
     textColor: els.textColorInput.value || DEFAULT_PATTERN.textColor,
     outlineColor: els.outlineColorInput.value || DEFAULT_PATTERN.outlineColor,
-    outlineWidth: Number(els.outlineWidthInput.value) || 0,
     highlightEnabled: !!els.highlightEnabledInput.checked,
     highlightColor: els.highlightColorInput.value || DEFAULT_PATTERN.highlightColor,
-    highlightPadding: Number(els.highlightPaddingInput.value) || DEFAULT_PATTERN.highlightPadding,
-    opacity: Number(els.opacityInput.value) || DEFAULT_PATTERN.opacity,
-    positionX: Number(els.positionXInput.value) || 0,
-    positionY: Number(els.positionYInput.value) || 0,
     postText: (els.postText.value || '').trim(),
     includeCurrentTime: !!els.includeCurrentTimeInput.checked
+  };
+}
+
+function buildPatternFromUI() {
+  return {
+    ...getActivePattern(),
+    ...readFormToPartialPattern()
   };
 }
 
@@ -183,29 +312,24 @@ function applyPatternToForm(pattern) {
   const p = { ...DEFAULT_PATTERN, ...(pattern || {}) };
 
   els.watermarkText.value = p.watermarkText;
-  els.fontSizeInput.value = p.fontSize;
   els.fontWeightInput.value = p.fontWeight;
   els.fontFamilySelect.value = p.fontFamily;
   els.lineHeightSelect.value = p.lineHeight;
   els.textColorInput.value = p.textColor;
   els.outlineColorInput.value = p.outlineColor;
-  els.outlineWidthInput.value = p.outlineWidth;
   els.highlightEnabledInput.checked = !!p.highlightEnabled;
   els.highlightColorInput.value = p.highlightColor;
-  els.highlightPaddingInput.value = p.highlightPadding;
-  els.opacityInput.value = p.opacity;
-  els.positionXInput.value = p.positionX;
-  els.positionYInput.value = p.positionY;
   els.postText.value = p.postText;
   els.includeCurrentTimeInput.checked = !!p.includeCurrentTime;
 }
 
 function saveCurrentPattern() {
-  const pattern = readFormToPattern();
+  const pattern = buildPatternFromUI();
   state.patterns[state.activePatternId] = { ...DEFAULT_PATTERN, ...pattern };
   state.drafts[state.activePatternId] = pattern.postText || '';
   savePersistedState();
   refreshTimePreview();
+  updateToolbarUI();
   els.settingsStatus.innerHTML = '<span class="ok">このパターンを保存しました。</span>';
 }
 
@@ -213,10 +337,9 @@ function switchPattern(patternId) {
   const nextId = Number(patternId);
   if (!state.patterns[nextId]) return;
 
-  // 切り替え前の編集中内容を保持
   state.patterns[state.activePatternId] = {
     ...DEFAULT_PATTERN,
-    ...readFormToPattern()
+    ...buildPatternFromUI()
   };
   state.drafts[state.activePatternId] = els.postText.value || '';
 
@@ -224,9 +347,11 @@ function switchPattern(patternId) {
 
   applyPatternToForm(state.patterns[nextId]);
   updatePatternTabs();
+  updateToolbarUI();
   savePersistedState();
   refreshTimePreview();
   setStatus(els.settingsStatus, `パターン${nextId}に切り替えました。`);
+
   if (hasSelectedImages()) {
     schedulePreviewRerender(0);
   } else {
@@ -268,12 +393,6 @@ function buildFinalPostText(pattern) {
   return parts.join('\n');
 }
 
-function refreshPostTexts() {
-  const pattern = readFormToPattern() || DEFAULT_PATTERN;
-  const finalText = buildFinalPostText(pattern);
-  els.postText.value = finalText;
-}
-
 function refreshTimePreview() {
   const includeCurrentTime = !!els.includeCurrentTimeInput.checked;
   const currentLabel = getCurrentTimeLabel();
@@ -290,7 +409,7 @@ function refreshTimePreview() {
 }
 
 async function copyPostAndOpenX() {
-  const pattern = readFormToPattern() || DEFAULT_PATTERN;
+  const pattern = buildPatternFromUI() || DEFAULT_PATTERN;
   const finalText = buildFinalPostText(pattern);
 
   try {
@@ -396,7 +515,7 @@ function drawTextOnImage(img, text, style) {
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.miterLimit = 2;
-1.5
+  
   const lineHeight = style.fontSize * style.lineHeight;
   const textWidths = lines.map((line) => ctx.measureText(line).width);
   const maxTextWidth = Math.max(...textWidths, 0);
@@ -501,7 +620,7 @@ async function generateImages(options = {}) {
       throw new Error('画像は1〜4枚選択してください。');
     }
 
-    const pattern = readFormToPattern() || DEFAULT_PATTERN;
+    const pattern = buildPatternFromUI() || DEFAULT_PATTERN;
     const loadedImages = await Promise.all(
       files.map((file) => loadImageFromFile(file))
     );
@@ -579,7 +698,7 @@ function renderEmptyPreview() {
 
 async function renderSamplePreview() {
   try {
-    const pattern = readFormToPattern() || DEFAULT_PATTERN;
+    const pattern = buildPatternFromUI() || DEFAULT_PATTERN;
     const sampleImg = await loadImageFromUrl(SAMPLE_SRC);
     const renderStyle = patternToRenderStyle(pattern, sampleImg.width, sampleImg.height);
     const dataUrl = drawTextOnImage(sampleImg, pattern.watermarkText, renderStyle);
@@ -704,7 +823,7 @@ function hasSelectedImages() {
 }
 
 function persistCurrentEditorState() {
-  const pattern = readFormToPattern();
+  const pattern = buildPatternFromUI();
   state.patterns[state.activePatternId] = { ...DEFAULT_PATTERN, ...pattern };
   state.drafts[state.activePatternId] = pattern.postText || '';
   savePersistedState();
@@ -728,6 +847,7 @@ async function handleImageFilesChange() {
 function handleEditorValueChange() {
   persistCurrentEditorState();
   refreshTimePreview();
+  //updateToolbarUI();
 
   if (hasSelectedImages()) {
     schedulePreviewRerender();
@@ -757,21 +877,23 @@ els.patternTabs.forEach((tab) => {
   });
 });
 
+els.toolbarSlider.addEventListener('input', handleToolbarSliderInput);
+
+els.toolbarToolButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    switchToolbarTool(btn.dataset.tool);
+  });
+});
+
 [
   els.watermarkText,
-  els.fontSizeInput,
   els.fontWeightInput,
   els.fontFamilySelect,
   els.lineHeightSelect,
   els.textColorInput,
   els.outlineColorInput,
-  els.outlineWidthInput,
   els.highlightEnabledInput,
   els.highlightColorInput,
-  els.highlightPaddingInput,
-  els.opacityInput,
-  els.positionXInput,
-  els.positionYInput,
   els.includeCurrentTimeInput
 ].forEach((el) => {
   const eventName =
@@ -786,5 +908,6 @@ els.postText.addEventListener('input', handlePostTextChange);
 
 window.addEventListener('load', () => {
   loadPersistedState();
+  updateToolbarUI();
   renderPreviewViewer();
 });

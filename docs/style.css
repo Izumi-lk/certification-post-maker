@@ -290,6 +290,168 @@ textarea#postText {
   flex-wrap: wrap;
 }
 
+.toolbar-embed {
+  background: #fff;
+  border-top: 1px solid var(--border);
+}
+
+.dock-panel {
+  padding: 14px 16px 16px;
+  background: #fff8fb;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.panel-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent-strong);
+}
+
+.slider-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+#toolbarSlider {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent-strong);
+}
+
+.dock-tools {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  padding: 10px 10px 14px;
+  background: #fff;
+}
+
+.tool-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 8px 2px;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.tool-btn.active {
+  color: var(--accent-strong);
+  background: #fff3f7;
+}
+
+.tool-icon {
+  width: 26px;
+  height: 26px;
+  border: 2px solid currentColor;
+  border-radius: 8px;
+  position: relative;
+}
+
+.tool-icon.size::before {
+  content: "A";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.tool-icon.opacity::before,
+.tool-icon.outline::before,
+.tool-icon.padding::before,
+.tool-icon.move-x::before,
+.tool-icon.move-y::before {
+  content: "";
+  position: absolute;
+}
+
+.tool-icon.opacity::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.tool-icon.outline::before {
+  inset: 4px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+}
+
+.tool-icon.padding::before {
+  left: 5px;
+  right: 5px;
+  top: 8px;
+  bottom: 8px;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+.tool-icon.move-x::before {
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 2px;
+  background: currentColor;
+  transform: translateY(-50%);
+}
+
+.tool-icon.move-y::before {
+  top: 4px;
+  bottom: 4px;
+  left: 50%;
+  width: 2px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.tool-label {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .dock-tools {
+    gap: 2px;
+    padding: 8px 6px 12px;
+  }
+
+  .tool-label {
+    font-size: 10px;
+  }
+}
+
 .mini-btn {
   appearance: none;
   border: 1px solid var(--accent);
