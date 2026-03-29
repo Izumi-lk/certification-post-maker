@@ -292,8 +292,11 @@ function updateToolbarUI() {
 
 function switchToolbarCategory(categoryKey) {
   if (!TOOLBAR_CATEGORY_CONFIG[categoryKey]) return;
+  if (state.activeToolbarCategory === categoryKey) return;
+
   state.activeToolbarCategory = categoryKey;
-  updateToolbarUI();
+  refreshToolbarHeader();
+  renderToolbarCategory();
 }
 
 function refreshToolbarHeader() {
@@ -302,10 +305,6 @@ function refreshToolbarHeader() {
   if (!config) return;
 
   const pattern = getActivePattern();
-
-  //els.toolbarPanelTitle.textContent = config.label;
-  //els.toolbarPanelSubtitle.textContent = config.subtitle;
-  //els.toolbarPanelValue.textContent = config.getValueText(pattern);
 
   els.toolbarCategoryButtons.forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.category === categoryKey);
@@ -382,21 +381,38 @@ function renderTextColorPanel(pattern) {
     <div class="toolbar-section">
       <div class="control-head">
         <span class="control-label">文字色</span>
-        <span class="control-value">${pattern.textColor}</span>
+        <span class="control-value" id="toolbarTextColorValue">${pattern.textColor}</span>
       </div>
       <div class="color-palette">${chips}</div>
     </div>
   `;
 
+  const valueEl = document.getElementById('toolbarTextColorValue');
+
   els.toolbarPanelBody.querySelectorAll('[data-text-color]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const value = btn.dataset.textColor;
+
       if (value === 'custom') {
-        els.toolbarTextColorCustomInput.value = pattern.textColor || DEFAULT_PATTERN.textColor;
+        els.toolbarTextColorCustomInput.value = getActivePattern().textColor || DEFAULT_PATTERN.textColor;
         els.toolbarTextColorCustomInput.click();
         return;
       }
-      updatePatternAndPreview({ textColor: value });
+
+      updateActivePattern({ textColor: value });
+      refreshToolbarHeader();
+
+      valueEl.textContent = value;
+
+      els.toolbarPanelBody.querySelectorAll('[data-text-color]').forEach((chip) => {
+        chip.classList.toggle('active', chip.dataset.textColor === value);
+      });
+
+      if (hasSelectedImages()) {
+        schedulePreviewRerender();
+      } else {
+        renderSamplePreview();
+      }
     });
   });
 }
@@ -410,45 +426,55 @@ function renderSizePanel(pattern) {
     <div class="toolbar-section">
       <div class="control-head">
         <span class="control-label">文字サイズ</span>
-        <span class="control-value">${sizeValue}</span>
+        <span class="control-value" id="toolbarFontSizeValue">${sizeValue}</span>
       </div>
       <input type="range" id="toolbarFontSizeSlider" min="10" max="160" step="1" value="${sizeValue}" />
-      <div class="slider-labels">
-        <span>10</span>
-        <span>ドラッグして調整</span>
-        <span>160</span>
-      </div>
+      <div class="slider-labels"></div>
+
       <div class="control-head">
         <span class="control-label">太さ</span>
-        <span class="control-value">${weightValue}</span>
+        <span class="control-value" id="toolbarFontWeightValue">${weightValue}</span>
       </div>
       <div class="segmented-row">
         <button class="segment-btn${weightValue === 400 ? ' active' : ''}" type="button" data-font-weight="400">400</button>
         <button class="segment-btn${weightValue === 700 ? ' active' : ''}" type="button" data-font-weight="700">700</button>
-      </div>     
+      </div>
     </div>
   `;
 
   const slider = document.getElementById('toolbarFontSizeSlider');
+  const sizeValueEl = document.getElementById('toolbarFontSizeValue');
+  const weightValueEl = document.getElementById('toolbarFontWeightValue');
+
   slider.addEventListener('input', () => {
-    updateActivePattern({ fontSize: Number(slider.value) });
+    const value = Number(slider.value);
+    updateActivePattern({ fontSize: value });
+    refreshToolbarHeader();
+    sizeValueEl.textContent = String(value);
+
     if (hasSelectedImages()) {
       schedulePreviewRerender();
     } else {
       renderSamplePreview();
     }
-    updateToolbarUI();
   });
 
   els.toolbarPanelBody.querySelectorAll('[data-font-weight]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      updateActivePattern({ fontWeight: Number(btn.dataset.fontWeight) });
+      const value = Number(btn.dataset.fontWeight);
+      updateActivePattern({ fontWeight: value });
+      refreshToolbarHeader();
+      weightValueEl.textContent = String(value);
+
+      els.toolbarPanelBody.querySelectorAll('[data-font-weight]').forEach((chip) => {
+        chip.classList.toggle('active', Number(chip.dataset.fontWeight) === value);
+      });
+
       if (hasSelectedImages()) {
         schedulePreviewRerender();
       } else {
         renderSamplePreview();
       }
-      updateToolbarUI();
     });
   });
 }
@@ -469,36 +495,55 @@ function renderOutlinePanel(pattern) {
   els.toolbarPanelBody.innerHTML = `
     <div class="toolbar-section">
       <div class="control-head">
-        <span class="control-label">アウトライン太さ</span>
-        <span class="control-value">${widthValue}</span>
+        <span class="control-label">太さ</span>
+        <span class="control-value" id="toolbarOutlineWidthValue">${widthValue}</span>
       </div>
       <input type="range" id="toolbarOutlineWidthSlider" min="0" max="40" step="1" value="${widthValue}" />
-      <div class="slider-labels">
-        <span>0</span>
-        <span>なし ← → 太め</span>
-        <span>40</span>
-      </div>
-      <div class="control-head">
-        <span class="control-label">アウトライン色</span>
-        <span class="control-value">${pattern.outlineColor}</span>
-      </div>
+      <div class="slider-labels"></div>
       <div class="color-palette">${chips}</div>
     </div>
   `;
 
-  document.getElementById('toolbarOutlineWidthSlider').addEventListener('input', (e) => {
-    updatePatternAndPreview({ outlineWidth: Number(e.target.value) });
+  const slider = document.getElementById('toolbarOutlineWidthSlider');
+  const widthValueEl = document.getElementById('toolbarOutlineWidthValue');
+  const colorValueEl = document.getElementById('toolbarOutlineColorValue');
+
+  slider.addEventListener('input', (e) => {
+    const value = Number(e.target.value);
+    updateActivePattern({ outlineWidth: value });
+    refreshToolbarHeader();
+    widthValueEl.textContent = String(value);
+
+    if (hasSelectedImages()) {
+      schedulePreviewRerender();
+    } else {
+      renderSamplePreview();
+    }
   });
 
   els.toolbarPanelBody.querySelectorAll('[data-outline-color]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const value = btn.dataset.outlineColor;
+
       if (value === 'custom') {
-        els.toolbarOutlineColorCustomInput.value = pattern.outlineColor || DEFAULT_PATTERN.outlineColor;
+        els.toolbarOutlineColorCustomInput.value = getActivePattern().outlineColor || DEFAULT_PATTERN.outlineColor;
         els.toolbarOutlineColorCustomInput.click();
         return;
       }
-      updatePatternAndPreview({ outlineColor: value });
+
+      updateActivePattern({ outlineColor: value });
+      refreshToolbarHeader();
+      colorValueEl.textContent = value;
+
+      els.toolbarPanelBody.querySelectorAll('[data-outline-color]').forEach((chip) => {
+        chip.classList.toggle('active', chip.dataset.outlineColor === value);
+      });
+
+      if (hasSelectedImages()) {
+        schedulePreviewRerender();
+      } else {
+        renderSamplePreview();
+      }
     });
   });
 }
@@ -510,86 +555,69 @@ function renderHighlightPanel(pattern) {
 
   const chips = HIGHLIGHT_COLOR_OPTIONS.map((color) => {
     if (color === 'custom') {
-      return `
-        <button class="color-chip custom" type="button" data-highlight-color="custom">＋</button>
-      `;
+      return `<button class="color-chip custom" type="button" data-highlight-color="custom">＋</button>`;
     }
 
     const active = color === displayColor ? ' active' : '';
     const extraClass = color === 'transparent' ? ' transparent' : '';
     const style = color === 'transparent' ? '' : ` style="--chip:${escapeHtml(color)};"`;
 
-    return `
-      <button class="color-chip${extraClass}${active}" type="button" data-highlight-color="${escapeHtml(color)}"${style}></button>
-    `;
+    return `<button class="color-chip${extraClass}${active}" type="button" data-highlight-color="${escapeHtml(color)}"${style}></button>`;
   }).join('');
 
   els.toolbarPanelBody.innerHTML = `
     <div class="toolbar-section">
-        <div class="control-head">
-          <span class="control-label">背景余白量</span>
-          <span class="control-value">${paddingValue}</span>
-        </div>
-        <input type="range" id="toolbarHighlightPaddingSlider" min="0" max="30" step="1" value="${paddingValue}" />
-        <div class="slider-labels">
-          <span>0</span>
-          <span>狭い ← → 広い</span>
-          <span>30</span>
-        </div>
-        <div class="control-head">
-          <span class="control-label">ハイライト色</span>
-          <span class="control-value">${displayColor === 'transparent' ? '透明' : '色あり'}</span>
-        </div>
-        <div class="color-palette">${chips}</div>
-        <input type="color" id="toolbarHighlightCustomColor" value="${escapeHtml(pattern.highlightColor || DEFAULT_PATTERN.highlightColor)}" hidden />
+      <div class="control-head">
+        <span class="control-label">背景余白量</span>
+        <span class="control-value" id="toolbarHighlightPaddingValue">${paddingValue}</span>
+      </div>
+      <input type="range" id="toolbarHighlightPaddingSlider" min="0" max="30" step="1" value="${paddingValue}" />
+      <div class="slider-labels"></div>
+      <div class="color-palette">${chips}</div>
     </div>
   `;
 
   const slider = document.getElementById('toolbarHighlightPaddingSlider');
+  const paddingValueEl = document.getElementById('toolbarHighlightPaddingValue');
+  const colorValueEl = document.getElementById('toolbarHighlightColorValue');
+
   slider.addEventListener('input', () => {
-    updateActivePattern({ highlightPadding: Number(slider.value) });
+    const value = Number(slider.value);
+    updateActivePattern({ highlightPadding: value });
+    refreshToolbarHeader();
+    paddingValueEl.textContent = String(value);
+
     if (hasSelectedImages()) {
       schedulePreviewRerender();
     } else {
       renderSamplePreview();
     }
-    updateToolbarUI();
   });
-
-  const customColorInput = document.getElementById('toolbarHighlightCustomColor');
 
   els.toolbarPanelBody.querySelectorAll('[data-highlight-color]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const value = btn.dataset.highlightColor;
 
       if (value === 'custom') {
-        customColorInput.click();
+        els.toolbarHighlightColorCustomInput.value = getActivePattern().highlightColor || DEFAULT_PATTERN.highlightColor;
+        els.toolbarHighlightColorCustomInput.click();
         return;
       }
 
       setHighlightFromDisplayColor(value);
+      refreshToolbarHeader();
+      colorValueEl.textContent = value === 'transparent' ? '透明' : '色あり';
+
+      els.toolbarPanelBody.querySelectorAll('[data-highlight-color]').forEach((chip) => {
+        chip.classList.toggle('active', chip.dataset.highlightColor === value);
+      });
 
       if (hasSelectedImages()) {
         schedulePreviewRerender();
       } else {
         renderSamplePreview();
       }
-      updateToolbarUI();
     });
-  });
-
-  customColorInput.addEventListener('input', () => {
-    updateActivePattern({
-      highlightEnabled: true,
-      highlightColor: customColorInput.value
-    });
-
-    if (hasSelectedImages()) {
-      schedulePreviewRerender();
-    } else {
-      renderSamplePreview();
-    }
-    updateToolbarUI();
   });
 }
 
@@ -602,33 +630,47 @@ function renderPositionPanel(pattern) {
     <div class="toolbar-section">
       <div class="control-head">
         <span class="control-label">X座標</span>
-        <span class="control-value">${xValue}</span>
+        <span class="control-value" id="toolbarPositionXValue">${xValue}</span>
       </div>
       <input type="range" id="toolbarPositionXSlider" min="-50" max="50" step="1" value="${xValue}" />
-      <div class="slider-labels">
-        <span>-50</span>
-        <span>左 ← → 右</span>
-        <span>50</span>
-      </div>
+      <div class="slider-labels"></div>
+
       <div class="control-head">
         <span class="control-label">Y座標</span>
-        <span class="control-value">${yValue}</span>
+        <span class="control-value" id="toolbarPositionYValue">${yValue}</span>
       </div>
       <input type="range" id="toolbarPositionYSlider" min="-50" max="50" step="1" value="${yValue}" />
-      <div class="slider-labels">
-        <span>-50</span>
-        <span>下 ← → 上</span>
-        <span>50</span>
-      </div>
+      <div class="slider-labels"></div>
     </div>
   `;
 
+  const xValueEl = document.getElementById('toolbarPositionXValue');
+  const yValueEl = document.getElementById('toolbarPositionYValue');
+
   document.getElementById('toolbarPositionXSlider').addEventListener('input', (e) => {
-    updatePatternAndPreview({ positionX: Number(e.target.value) });
+    const value = Number(e.target.value);
+    updateActivePattern({ positionX: value });
+    refreshToolbarHeader();
+    xValueEl.textContent = String(value);
+
+    if (hasSelectedImages()) {
+      schedulePreviewRerender();
+    } else {
+      renderSamplePreview();
+    }
   });
 
   document.getElementById('toolbarPositionYSlider').addEventListener('input', (e) => {
-    updatePatternAndPreview({ positionY: Number(e.target.value) });
+    const value = Number(e.target.value);
+    updateActivePattern({ positionY: value });
+    refreshToolbarHeader();
+    yValueEl.textContent = String(value);
+
+    if (hasSelectedImages()) {
+      schedulePreviewRerender();
+    } else {
+      renderSamplePreview();
+    }
   });
 }
 
@@ -638,21 +680,28 @@ function renderOpacityPanel(pattern) {
 
   els.toolbarPanelBody.innerHTML = `
     <div class="toolbar-section">
-        <div class="control-head">
-          <span class="control-label">透明度</span>
-          <span class="control-value">${value}%</span>
-        </div>
-        <input type="range" id="toolbarOpacitySlider" min="0" max="100" step="1" value="${value}" />
-        <div class="slider-labels">
-          <span>0</span>
-          <span>透明 ← → はっきり</span>
-          <span>100</span>
-        </div>
+      <div class="control-head">
+        <span class="control-label">透明度</span>
+        <span class="control-value" id="toolbarOpacityValue">${value}%</span>
+      </div>
+      <input type="range" id="toolbarOpacitySlider" min="0" max="100" step="1" value="${value}" />
+      <div class="slider-labels"></div>
     </div>
   `;
 
+  const valueEl = document.getElementById('toolbarOpacityValue');
+
   document.getElementById('toolbarOpacitySlider').addEventListener('input', (e) => {
-    updatePatternAndPreview({ opacity: Number(e.target.value) });
+    const value = Number(e.target.value);
+    updateActivePattern({ opacity: value });
+    refreshToolbarHeader();
+    valueEl.textContent = `${value}%`;
+
+    if (hasSelectedImages()) {
+      schedulePreviewRerender();
+    } else {
+      renderSamplePreview();
+    }
   });
 }
 
@@ -670,25 +719,45 @@ function renderLineHeightPanel(pattern) {
     <div class="toolbar-section">
       <div class="control-head">
         <span class="control-label">行間</span>
-        <span class="control-value">${current}</span>
+        <span class="control-value" id="toolbarLineHeightValue">${current}</span>
       </div>
       <div class="segmented-row segmented-row-5">${buttons}</div>
     </div>
   `;
 
+  const valueEl = document.getElementById('toolbarLineHeightValue');
+
   els.toolbarPanelBody.querySelectorAll('[data-line-height]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      updatePatternAndPreview({ lineHeight: btn.dataset.lineHeight });
+      const value = btn.dataset.lineHeight;
+      updateActivePattern({ lineHeight: value });
+      refreshToolbarHeader();
+      valueEl.textContent = value;
+
+      els.toolbarPanelBody.querySelectorAll('[data-line-height]').forEach((chip) => {
+        chip.classList.toggle('active', chip.dataset.lineHeight === value);
+      });
+
+      if (hasSelectedImages()) {
+        schedulePreviewRerender();
+      } else {
+        renderSamplePreview();
+      }
     });
   });
 }
 
+function updatePatternAndPreview(patch, options = {}) {
+  const {
+    rerenderPanel = false
+  } = options;
 
-
-// レンダリング
-function updatePatternAndPreview(patch) {
   updateActivePattern(patch);
-  updateToolbarUI();
+  refreshToolbarHeader();
+
+  if (rerenderPanel) {
+    renderToolbarCategory();
+  }
 
   if (hasSelectedImages()) {
     schedulePreviewRerender();
@@ -1352,18 +1421,63 @@ els.toolbarCategoryButtons.forEach((btn) => {
 });
 
 els.toolbarTextColorCustomInput.addEventListener('input', () => {
-  updatePatternAndPreview({ textColor: els.toolbarTextColorCustomInput.value });
+  const value = els.toolbarTextColorCustomInput.value;
+  updateActivePattern({ textColor: value });
+  refreshToolbarHeader();
+
+  const valueEl = document.getElementById('toolbarTextColorValue');
+  if (valueEl) valueEl.textContent = value;
+
+  els.toolbarPanelBody.querySelectorAll('[data-text-color]').forEach((chip) => {
+    chip.classList.remove('active');
+  });
+
+  if (hasSelectedImages()) {
+    schedulePreviewRerender();
+  } else {
+    renderSamplePreview();
+  }
 });
 
 els.toolbarOutlineColorCustomInput.addEventListener('input', () => {
-  updatePatternAndPreview({ outlineColor: els.toolbarOutlineColorCustomInput.value });
+  const value = els.toolbarOutlineColorCustomInput.value;
+  updateActivePattern({ outlineColor: value });
+  refreshToolbarHeader();
+
+  const valueEl = document.getElementById('toolbarOutlineColorValue');
+  if (valueEl) valueEl.textContent = value;
+
+  els.toolbarPanelBody.querySelectorAll('[data-outline-color]').forEach((chip) => {
+    chip.classList.remove('active');
+  });
+
+  if (hasSelectedImages()) {
+    schedulePreviewRerender();
+  } else {
+    renderSamplePreview();
+  }
 });
 
 els.toolbarHighlightColorCustomInput.addEventListener('input', () => {
-  updatePatternAndPreview({
+  const value = els.toolbarHighlightColorCustomInput.value;
+  updateActivePattern({
     highlightEnabled: true,
-    highlightColor: els.toolbarHighlightColorCustomInput.value
+    highlightColor: value
   });
+  refreshToolbarHeader();
+
+  const valueEl = document.getElementById('toolbarHighlightColorValue');
+  if (valueEl) valueEl.textContent = '色あり';
+
+  els.toolbarPanelBody.querySelectorAll('[data-highlight-color]').forEach((chip) => {
+    chip.classList.remove('active');
+  });
+
+  if (hasSelectedImages()) {
+    schedulePreviewRerender();
+  } else {
+    renderSamplePreview();
+  }
 });
 
 [

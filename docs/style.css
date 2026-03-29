@@ -296,7 +296,7 @@ textarea#postText {
 }
 
 .dock-panel {
-  padding: 14px 16px 16px;
+  padding: 14px 10px;
   background: #fff8fb;
   border-bottom: 1px solid var(--border);
 }
@@ -313,7 +313,7 @@ textarea#postText {
   font-size: 15px;
   font-weight: 800;
 }
-
+bt
 .panel-value {
   font-size: 22px;
   font-weight: 800;
@@ -353,7 +353,7 @@ textarea#postText {
   color: var(--muted);
   display: grid;
   justify-items: center;
-  gap: 6px;
+  gap: 2px;
   padding: 8px 2px;
   cursor: pointer;
   border-radius: 12px;
@@ -487,12 +487,12 @@ textarea#postText {
 }
 
 .dock-tools-scroll .tool-btn {
-  flex: 0 0 72px;
-  min-width: 72px;
+  flex: 0 0 56px;
+  min-width: 56px;
 }
 
 .tool-icon.font::before {
-  content: "あ";
+  content: "Aa";
   position: absolute;
   inset: 0;
   display: grid;
@@ -615,7 +615,7 @@ textarea#postText {
 
 .font-row {
   display: flex;
-  gap: 10px;
+  gap: 6px;
   overflow-x: auto;
   padding-bottom: 4px;
   -webkit-overflow-scrolling: touch;
@@ -632,9 +632,9 @@ textarea#postText {
   background: #fff;
   color: var(--text);
   border-radius: 12px;
-  padding: 10px 12px;
-  min-width: 92px;
-  font-size: 13px;
+  padding: 10px 6px;
+  min-width: 72px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
