@@ -512,6 +512,47 @@ textarea#postText {
   opacity: 0.35;
 }
 
+.tool-icon.text-color::before {
+  content: "A";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: currentColor;
+}
+
+.tool-icon.position::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid currentColor;
+}
+
+.tool-icon.line-height::before,
+.tool-icon.line-height::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  height: 2px;
+  background: currentColor;
+}
+
+.tool-icon.line-height::before {
+  top: 8px;
+}
+
+.tool-icon.line-height::after {
+  bottom: 8px;
+}
+
 .toolbar-section {
   display: grid;
   gap: 10px;
@@ -566,6 +607,10 @@ textarea#postText {
   background: #fff3f7;
   border-color: var(--accent-strong);
   color: var(--accent-strong);
+}
+
+.segmented-row-5 {
+  grid-template-columns: repeat(5, 1fr);
 }
 
 .font-row {

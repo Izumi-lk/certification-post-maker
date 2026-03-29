@@ -60,12 +60,17 @@
 
       <div class="toolbar-embed">
         <div class="dock-panel">
+          <input type="color" id="toolbarTextColorCustomInput" hidden />
+          <input type="color" id="toolbarOutlineColorCustomInput" hidden />
+          <input type="color" id="toolbarHighlightColorCustomInput" hidden />
           <div class="panel-top">
+            <!--
             <div class="panel-heading">
               <div class="panel-title" id="toolbarPanelTitle">フォント</div>
               <div class="panel-subtitle" id="toolbarPanelSubtitle">候補から1つ選択</div>
             </div>
-            <div class="panel-value compact" id="toolbarPanelValue">標準</div>
+            
+            <div class="panel-value compact" id="toolbarPanelValue">標準</div>-->
           </div>
 
           <div class="panel-body" id="toolbarPanelBody"></div>
@@ -77,14 +82,39 @@
             <span class="tool-label">フォント</span>
           </button>
 
+          <button class="tool-btn" type="button" data-category="textColor">
+            <span class="tool-icon text-color"></span>
+            <span class="tool-label">文字色</span>
+          </button>
+
           <button class="tool-btn" type="button" data-category="size">
             <span class="tool-icon size"></span>
             <span class="tool-label">サイズ</span>
           </button>
 
+          <button class="tool-btn" type="button" data-category="outline">
+            <span class="tool-icon outline"></span>
+            <span class="tool-label">アウトライン</span>
+          </button>
+
           <button class="tool-btn" type="button" data-category="highlight">
             <span class="tool-icon highlight"></span>
             <span class="tool-label">ハイライト</span>
+          </button>
+
+          <button class="tool-btn" type="button" data-category="position">
+            <span class="tool-icon position"></span>
+            <span class="tool-label">位置</span>
+          </button>
+
+          <button class="tool-btn" type="button" data-category="opacity">
+            <span class="tool-icon opacity"></span>
+            <span class="tool-label">透明度</span>
+          </button>
+
+          <button class="tool-btn" type="button" data-category="lineHeight">
+            <span class="tool-icon line-height"></span>
+            <span class="tool-label">行間</span>
           </button>
         </div>
       </div>
@@ -95,24 +125,43 @@
         </button>
       </div>
 
+      <!-- ウォーターマーク文字 -->
+      <div class="field">
+        <label class="label" for="watermarkText">ウォーターマーク文字（複数行可）</label>
+        <textarea id="watermarkText">@inu_5122</textarea>
+      </div>
+
+      <!-- 投稿文 -->
+      <div class="section-title subheading">投稿文</div>
+      <div class="field">
+        <label class="label" for="postText">本文・ハッシュタグ（自由入力）</label>
+        <div id="timePreview" class="post-time-preview" aria-live="polite"></div>
+        <textarea id="postText"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" id="includeCurrentTimeInput" checked />
+          現在時刻の自動生成文字列を先頭に含める
+        </label>
+      </div>
+      <button class="btn" id="savePatternBtn" type="button">編集内容を保存</button>
+
       <!-- ステータス表示はしない -->
       <div class="status" id="generateStatus" style="display: none;"></div>
       <div class="status" id="resultStatus" style="display: none;"></div>
     </div>
 
     <!-- 設定編集 -->
-    <details class="card collapsible-card">
+    <details class="card collapsible-card" style="display: none;">
       <summary class="collapse-summary">
         <span>設定編集</span>
         <span class="collapse-hint">必要なときだけ開く</span>
       </summary>
 
+      // TODO ここを消すとサンプル画像も消えてしまうので要調査
       <div class="collapse-body">
-        <!-- ウォーターマーク文字 -->
-        <div class="field">
-          <label class="label" for="watermarkText">ウォーターマーク文字（複数行可）</label>
-          <textarea id="watermarkText">@inu_5122</textarea>
-        </div>
+
         <!-- 文字デザイン -->
         <div class="section-title subheading" style="display: none;">文字デザイン</div>
         <div class="row two-col-mobile">
@@ -197,7 +246,7 @@
         <div class="row two-col-mobile">
           <div class="field">
             <label class="label" for="highlightColorInput">ハイライト色</label>
-            <input type="color" id="highlightColorInput" value="#ffe4f0" disabled/>
+            <input type="color" id="highlightColorInput" value="#ffe4f0" disabled />
           </div>
           <div class="field">
             <label class="label" for="highlightPaddingInput">背景帯の余白量</label>
@@ -217,21 +266,7 @@
           </div>
         </div>
 
-        <!-- 投稿文 -->
-        <div class="section-title subheading">投稿文</div>
-        <div class="field">
-          <label class="label" for="postText">本文・ハッシュタグ（自由入力）</label>
-          <div id="timePreview" class="post-time-preview" aria-live="polite"></div>
-          <textarea id="postText"></textarea>
-        </div>
 
-        <div class="field">
-          <label class="check">
-            <input type="checkbox" id="includeCurrentTimeInput" checked />
-            現在時刻の自動生成文字列を先頭に含める
-          </label>
-        </div>
-        <button class="btn" id="savePatternBtn" type="button">編集内容を保存</button>
       </div>
     </details>
 

@@ -1,7 +1,7 @@
 const DEFAULT_PATTERN = {
   watermarkText: '@sample',
   fontSize: 80,
-  fontWeight: 500,
+  fontWeight: '400',
   fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
   lineHeight: '1.5',
   textColor: '#ffffff',
@@ -95,6 +95,10 @@ const els = {
   toolbarPanelValue: document.getElementById('toolbarPanelValue'),
   toolbarPanelBody: document.getElementById('toolbarPanelBody'),
   toolbarCategoryButtons: document.querySelectorAll('[data-category]'),
+
+  toolbarTextColorCustomInput: document.getElementById('toolbarTextColorCustomInput'),
+  toolbarOutlineColorCustomInput: document.getElementById('toolbarOutlineColorCustomInput'),
+  toolbarHighlightColorCustomInput: document.getElementById('toolbarHighlightColorCustomInput'),
 };
 
 function getActivePattern() {
@@ -167,8 +171,30 @@ const HIGHLIGHT_COLOR_OPTIONS = [
   '#fff2b8',
   '#dff4ff',
   '#efe6ff',
+  '#c8ffd8',
   'transparent',
   'custom'
+];
+
+const COMMON_COLOR_OPTIONS = [
+  '#ffffff',
+  '#000000',
+  '#ff2b88',
+  '#ffe4f0',
+  '#fff2b8',
+  '#dff4ff',
+  '#efe6ff',
+  '#c8ffd8',
+  '#b9c6ff',
+  'custom'
+];
+
+const LINE_HEIGHT_OPTIONS = [
+  { value: '1', label: '1.0' },
+  { value: '1.25', label: '1.25' },
+  { value: '1.5', label: '1.5' },
+  { value: '1.75', label: '1.75' },
+  { value: '2', label: '2.0' }
 ];
 
 const TOOLBAR_CATEGORY_CONFIG = {
@@ -180,11 +206,25 @@ const TOOLBAR_CATEGORY_CONFIG = {
       return found ? found.label : '標準';
     }
   },
+  textColor: {
+    label: '文字色',
+    subtitle: 'パレットから文字色を選択',
+    getValueText(pattern) {
+      return pattern.textColor || DEFAULT_PATTERN.textColor;
+    }
+  },
   size: {
     label: 'サイズ',
     subtitle: '文字サイズと太さを調整',
     getValueText(pattern) {
       return `${pattern.fontSize} / ${pattern.fontWeight}`;
+    }
+  },
+  outline: {
+    label: 'アウトライン',
+    subtitle: '太さと色を調整',
+    getValueText(pattern) {
+      return `${pattern.outlineWidth} / 色`;
     }
   },
   highlight: {
@@ -193,9 +233,31 @@ const TOOLBAR_CATEGORY_CONFIG = {
     getValueText(pattern) {
       return pattern.highlightEnabled ? 'ON' : 'OFF';
     }
+  },
+  position: {
+    label: '位置',
+    subtitle: 'X座標とY座標を調整',
+    getValueText(pattern) {
+      return `X ${pattern.positionX} / Y ${pattern.positionY}`;
+    }
+  },
+  opacity: {
+    label: '透明度',
+    subtitle: '文字全体の透明度を調整',
+    getValueText(pattern) {
+      return `${pattern.opacity}%`;
+    }
+  },
+  lineHeight: {
+    label: '行間',
+    subtitle: '複数行テキストの間隔を調整',
+    getValueText(pattern) {
+      return String(pattern.lineHeight);
+    }
   }
 };
 
+/*
 function updateToolbarUI() {
   const categoryKey = state.activeToolbarCategory;
   const config = TOOLBAR_CATEGORY_CONFIG[categoryKey];
@@ -211,22 +273,21 @@ function updateToolbarUI() {
     btn.classList.toggle('active', btn.dataset.category === categoryKey);
   });
 
-  if (categoryKey === 'font') {
-    renderFontPanel(pattern);
-    return;
-  }
-
-  if (categoryKey === 'size') {
-    renderSizePanel(pattern);
-    return;
-  }
-
-  if (categoryKey === 'highlight') {
-    renderHighlightPanel(pattern);
-    return;
-  }
+  if (categoryKey === 'font') return renderFontPanel(pattern);
+  if (categoryKey === 'textColor') return renderTextColorPanel(pattern);
+  if (categoryKey === 'size') return renderSizePanel(pattern);
+  if (categoryKey === 'outline') return renderOutlinePanel(pattern);
+  if (categoryKey === 'highlight') return renderHighlightPanel(pattern);
+  if (categoryKey === 'position') return renderPositionPanel(pattern);
+  if (categoryKey === 'opacity') return renderOpacityPanel(pattern);
+  if (categoryKey === 'lineHeight') return renderLineHeightPanel(pattern);
 
   els.toolbarPanelBody.innerHTML = '';
+}*/
+
+function updateToolbarUI() {
+  refreshToolbarHeader();
+  renderToolbarCategory();
 }
 
 function switchToolbarCategory(categoryKey) {
@@ -235,7 +296,42 @@ function switchToolbarCategory(categoryKey) {
   updateToolbarUI();
 }
 
+function refreshToolbarHeader() {
+  const categoryKey = state.activeToolbarCategory;
+  const config = TOOLBAR_CATEGORY_CONFIG[categoryKey];
+  if (!config) return;
+
+  const pattern = getActivePattern();
+
+  //els.toolbarPanelTitle.textContent = config.label;
+  //els.toolbarPanelSubtitle.textContent = config.subtitle;
+  //els.toolbarPanelValue.textContent = config.getValueText(pattern);
+
+  els.toolbarCategoryButtons.forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.category === categoryKey);
+  });
+}
+
+function renderToolbarCategory() {
+  const categoryKey = state.activeToolbarCategory;
+  const pattern = getActivePattern();
+
+  if (categoryKey === 'font') return renderFontPanel(pattern);
+  if (categoryKey === 'textColor') return renderTextColorPanel(pattern);
+  if (categoryKey === 'size') return renderSizePanel(pattern);
+  if (categoryKey === 'outline') return renderOutlinePanel(pattern);
+  if (categoryKey === 'highlight') return renderHighlightPanel(pattern);
+  if (categoryKey === 'position') return renderPositionPanel(pattern);
+  if (categoryKey === 'opacity') return renderOpacityPanel(pattern);
+  if (categoryKey === 'lineHeight') return renderLineHeightPanel(pattern);
+
+  els.toolbarPanelBody.innerHTML = '';
+}
+
 // 各ツールのパネル内容をレンダリング
+// パネル表示
+
+// フォント //TODO 最新仕様に合わせる
 function renderFontPanel(pattern) {
   const chips = FONT_OPTIONS.map((item) => {
     const active = item.value === pattern.fontFamily ? ' active' : '';
@@ -255,45 +351,81 @@ function renderFontPanel(pattern) {
   els.toolbarPanelBody.querySelectorAll('[data-font-family]').forEach((btn) => {
     btn.addEventListener('click', () => {
       updateActivePattern({ fontFamily: btn.dataset.fontFamily });
+
       if (hasSelectedImages()) {
         schedulePreviewRerender();
       } else {
         renderSamplePreview();
       }
-      updateToolbarUI();
+
+      refreshToolbarHeader();
+
+      els.toolbarPanelBody.querySelectorAll('[data-font-family]').forEach((chip) => {
+        chip.classList.toggle('active', chip.dataset.fontFamily === btn.dataset.fontFamily);
+      });
     });
   });
 }
 
+// 文字色
+function renderTextColorPanel(pattern) {
+  const chips = COMMON_COLOR_OPTIONS.map((color) => {
+    if (color === 'custom') {
+      return `<button class="color-chip custom" type="button" data-text-color="custom">＋</button>`;
+    }
+
+    const active = color === pattern.textColor ? ' active' : '';
+    return `<button class="color-chip${active}" type="button" data-text-color="${escapeHtml(color)}" style="--chip:${escapeHtml(color)};"></button>`;
+  }).join('');
+
+  els.toolbarPanelBody.innerHTML = `
+    <div class="toolbar-section">
+      <div class="control-head">
+        <span class="control-label">文字色</span>
+        <span class="control-value">${pattern.textColor}</span>
+      </div>
+      <div class="color-palette">${chips}</div>
+    </div>
+  `;
+
+  els.toolbarPanelBody.querySelectorAll('[data-text-color]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.textColor;
+      if (value === 'custom') {
+        els.toolbarTextColorCustomInput.value = pattern.textColor || DEFAULT_PATTERN.textColor;
+        els.toolbarTextColorCustomInput.click();
+        return;
+      }
+      updatePatternAndPreview({ textColor: value });
+    });
+  });
+}
+
+// 文字サイズと太さ
 function renderSizePanel(pattern) {
   const sizeValue = Number(pattern.fontSize ?? DEFAULT_PATTERN.fontSize);
   const weightValue = Number(pattern.fontWeight ?? DEFAULT_PATTERN.fontWeight);
 
   els.toolbarPanelBody.innerHTML = `
     <div class="toolbar-section">
-      <div class="control-block">
-        <div class="control-head">
-          <span class="control-label">文字サイズ</span>
-          <span class="control-value">${sizeValue}</span>
-        </div>
-        <input type="range" id="toolbarFontSizeSlider" min="10" max="160" step="1" value="${sizeValue}" />
-        <div class="slider-labels">
-          <span>10</span>
-          <span>ドラッグして調整</span>
-          <span>160</span>
-        </div>
+      <div class="control-head">
+        <span class="control-label">文字サイズ</span>
+        <span class="control-value">${sizeValue}</span>
       </div>
-
-      <div class="control-block">
-        <div class="control-head">
-          <span class="control-label">太さ</span>
-          <span class="control-value">${weightValue}</span>
-        </div>
-        <div class="segmented-row">
-          <button class="segment-btn${weightValue === 400 ? ' active' : ''}" type="button" data-font-weight="400">400</button>
-          <button class="segment-btn${weightValue === 700 ? ' active' : ''}" type="button" data-font-weight="700">700</button>
-        </div>
+      <input type="range" id="toolbarFontSizeSlider" min="10" max="160" step="1" value="${sizeValue}" />
+      <div class="slider-labels">
+        <span>10</span>
+        <span>ドラッグして調整</span>
+        <span>160</span>
       </div>
+      <div class="control-head">
+        <span class="control-label">太さ</span>
+        <span class="control-value">${weightValue}</span>
+      </div>
+      <div class="segmented-row">
+        <button class="segment-btn${weightValue === 400 ? ' active' : ''}" type="button" data-font-weight="400">400</button>
+        <button class="segment-btn${weightValue === 700 ? ' active' : ''}" type="button" data-font-weight="700">700</button>
+      </div>     
     </div>
   `;
 
@@ -321,6 +453,57 @@ function renderSizePanel(pattern) {
   });
 }
 
+// アウトライン
+function renderOutlinePanel(pattern) {
+  const chips = COMMON_COLOR_OPTIONS.map((color) => {
+    if (color === 'custom') {
+      return `<button class="color-chip custom" type="button" data-outline-color="custom">＋</button>`;
+    }
+
+    const active = color === pattern.outlineColor ? ' active' : '';
+    return `<button class="color-chip${active}" type="button" data-outline-color="${escapeHtml(color)}" style="--chip:${escapeHtml(color)};"></button>`;
+  }).join('');
+
+  const widthValue = Number(pattern.outlineWidth ?? DEFAULT_PATTERN.outlineWidth);
+
+  els.toolbarPanelBody.innerHTML = `
+    <div class="toolbar-section">
+      <div class="control-head">
+        <span class="control-label">アウトライン太さ</span>
+        <span class="control-value">${widthValue}</span>
+      </div>
+      <input type="range" id="toolbarOutlineWidthSlider" min="0" max="40" step="1" value="${widthValue}" />
+      <div class="slider-labels">
+        <span>0</span>
+        <span>なし ← → 太め</span>
+        <span>40</span>
+      </div>
+      <div class="control-head">
+        <span class="control-label">アウトライン色</span>
+        <span class="control-value">${pattern.outlineColor}</span>
+      </div>
+      <div class="color-palette">${chips}</div>
+    </div>
+  `;
+
+  document.getElementById('toolbarOutlineWidthSlider').addEventListener('input', (e) => {
+    updatePatternAndPreview({ outlineWidth: Number(e.target.value) });
+  });
+
+  els.toolbarPanelBody.querySelectorAll('[data-outline-color]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.outlineColor;
+      if (value === 'custom') {
+        els.toolbarOutlineColorCustomInput.value = pattern.outlineColor || DEFAULT_PATTERN.outlineColor;
+        els.toolbarOutlineColorCustomInput.click();
+        return;
+      }
+      updatePatternAndPreview({ outlineColor: value });
+    });
+  });
+}
+
+// ハイライト
 function renderHighlightPanel(pattern) {
   const paddingValue = Number(pattern.highlightPadding ?? DEFAULT_PATTERN.highlightPadding);
   const displayColor = getHighlightDisplayColor(pattern);
@@ -343,7 +526,6 @@ function renderHighlightPanel(pattern) {
 
   els.toolbarPanelBody.innerHTML = `
     <div class="toolbar-section">
-      <div class="control-block">
         <div class="control-head">
           <span class="control-label">背景余白量</span>
           <span class="control-value">${paddingValue}</span>
@@ -354,17 +536,12 @@ function renderHighlightPanel(pattern) {
           <span>狭い ← → 広い</span>
           <span>30</span>
         </div>
-      </div>
-
-      <div class="control-block">
         <div class="control-head">
           <span class="control-label">ハイライト色</span>
           <span class="control-value">${displayColor === 'transparent' ? '透明' : '色あり'}</span>
         </div>
         <div class="color-palette">${chips}</div>
-        <div class="palette-note">透明を選ぶと、ハイライトなし設定を表現できます。</div>
         <input type="color" id="toolbarHighlightCustomColor" value="${escapeHtml(pattern.highlightColor || DEFAULT_PATTERN.highlightColor)}" hidden />
-      </div>
     </div>
   `;
 
@@ -416,19 +593,101 @@ function renderHighlightPanel(pattern) {
   });
 }
 
-function switchToolbarTool(toolKey) {
-  if (!TOOLBAR_TOOL_CONFIG[toolKey]) return;
-  state.activeToolbarTool = toolKey;
-  updateToolbarUI();
+// 位置
+function renderPositionPanel(pattern) {
+  const xValue = Number(pattern.positionX ?? DEFAULT_PATTERN.positionX);
+  const yValue = Number(pattern.positionY ?? DEFAULT_PATTERN.positionY);
+
+  els.toolbarPanelBody.innerHTML = `
+    <div class="toolbar-section">
+      <div class="control-head">
+        <span class="control-label">X座標</span>
+        <span class="control-value">${xValue}</span>
+      </div>
+      <input type="range" id="toolbarPositionXSlider" min="-50" max="50" step="1" value="${xValue}" />
+      <div class="slider-labels">
+        <span>-50</span>
+        <span>左 ← → 右</span>
+        <span>50</span>
+      </div>
+      <div class="control-head">
+        <span class="control-label">Y座標</span>
+        <span class="control-value">${yValue}</span>
+      </div>
+      <input type="range" id="toolbarPositionYSlider" min="-50" max="50" step="1" value="${yValue}" />
+      <div class="slider-labels">
+        <span>-50</span>
+        <span>下 ← → 上</span>
+        <span>50</span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('toolbarPositionXSlider').addEventListener('input', (e) => {
+    updatePatternAndPreview({ positionX: Number(e.target.value) });
+  });
+
+  document.getElementById('toolbarPositionYSlider').addEventListener('input', (e) => {
+    updatePatternAndPreview({ positionY: Number(e.target.value) });
+  });
 }
 
-function handleToolbarSliderInput() {
-  const toolKey = state.activeToolbarTool;
-  const config = TOOLBAR_TOOL_CONFIG[toolKey];
-  if (!config) return;
+// 透明度
+function renderOpacityPanel(pattern) {
+  const value = Number(pattern.opacity ?? DEFAULT_PATTERN.opacity);
 
-  const value = Number(els.toolbarSlider.value);
-  updateActivePattern({ [config.key]: value });
+  els.toolbarPanelBody.innerHTML = `
+    <div class="toolbar-section">
+        <div class="control-head">
+          <span class="control-label">透明度</span>
+          <span class="control-value">${value}%</span>
+        </div>
+        <input type="range" id="toolbarOpacitySlider" min="0" max="100" step="1" value="${value}" />
+        <div class="slider-labels">
+          <span>0</span>
+          <span>透明 ← → はっきり</span>
+          <span>100</span>
+        </div>
+    </div>
+  `;
+
+  document.getElementById('toolbarOpacitySlider').addEventListener('input', (e) => {
+    updatePatternAndPreview({ opacity: Number(e.target.value) });
+  });
+}
+
+// 行間
+function renderLineHeightPanel(pattern) {
+  const current = String(pattern.lineHeight ?? DEFAULT_PATTERN.lineHeight);
+
+  const buttons = LINE_HEIGHT_OPTIONS.map((item) => `
+    <button class="segment-btn${item.value === current ? ' active' : ''}" type="button" data-line-height="${item.value}">
+      ${item.label}
+    </button>
+  `).join('');
+
+  els.toolbarPanelBody.innerHTML = `
+    <div class="toolbar-section">
+      <div class="control-head">
+        <span class="control-label">行間</span>
+        <span class="control-value">${current}</span>
+      </div>
+      <div class="segmented-row segmented-row-5">${buttons}</div>
+    </div>
+  `;
+
+  els.toolbarPanelBody.querySelectorAll('[data-line-height]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      updatePatternAndPreview({ lineHeight: btn.dataset.lineHeight });
+    });
+  });
+}
+
+
+
+// レンダリング
+function updatePatternAndPreview(patch) {
+  updateActivePattern(patch);
   updateToolbarUI();
 
   if (hasSelectedImages()) {
@@ -437,6 +696,7 @@ function handleToolbarSliderInput() {
     renderSamplePreview();
   }
 }
+
 
 // パターンの保存・切り替え
 
@@ -511,9 +771,6 @@ function getCurrentDraft() {
 function readFormToPartialPattern() {
   return {
     watermarkText: (els.watermarkText.value || '').trim() || DEFAULT_PATTERN.watermarkText,
-    lineHeight: els.lineHeightSelect.value || DEFAULT_PATTERN.lineHeight,
-    textColor: els.textColorInput.value || DEFAULT_PATTERN.textColor,
-    outlineColor: els.outlineColorInput.value || DEFAULT_PATTERN.outlineColor,
     postText: (els.postText.value || '').trim(),
     includeCurrentTime: !!els.includeCurrentTimeInput.checked
   };
@@ -530,9 +787,6 @@ function applyPatternToForm(pattern) {
   const p = { ...DEFAULT_PATTERN, ...(pattern || {}) };
 
   els.watermarkText.value = p.watermarkText;
-  els.lineHeightSelect.value = p.lineHeight;
-  els.textColorInput.value = p.textColor;
-  els.outlineColorInput.value = p.outlineColor;
   els.postText.value = p.postText;
   els.includeCurrentTimeInput.checked = !!p.includeCurrentTime;
 }
@@ -1094,6 +1348,21 @@ els.patternTabs.forEach((tab) => {
 els.toolbarCategoryButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
     switchToolbarCategory(btn.dataset.category);
+  });
+});
+
+els.toolbarTextColorCustomInput.addEventListener('input', () => {
+  updatePatternAndPreview({ textColor: els.toolbarTextColorCustomInput.value });
+});
+
+els.toolbarOutlineColorCustomInput.addEventListener('input', () => {
+  updatePatternAndPreview({ outlineColor: els.toolbarOutlineColorCustomInput.value });
+});
+
+els.toolbarHighlightColorCustomInput.addEventListener('input', () => {
+  updatePatternAndPreview({
+    highlightEnabled: true,
+    highlightColor: els.toolbarHighlightColorCustomInput.value
   });
 });
 
