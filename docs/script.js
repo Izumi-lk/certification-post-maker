@@ -36,7 +36,7 @@ const SAMPLE_SRC = './sample.png';
 
 const state = {
   activePatternId: 1,
-  activeToolbarTool: 'fontSize',
+  activeToolbarCategory: 'font',
 
   patterns: {
     1: { ...DEFAULT_PATTERN },
@@ -91,12 +91,10 @@ const els = {
   settingsStatus: document.getElementById('settingsStatus'),
 
   toolbarPanelTitle: document.getElementById('toolbarPanelTitle'),
+  toolbarPanelSubtitle: document.getElementById('toolbarPanelSubtitle'),
   toolbarPanelValue: document.getElementById('toolbarPanelValue'),
-  toolbarSlider: document.getElementById('toolbarSlider'),
-  toolbarMinLabel: document.getElementById('toolbarMinLabel'),
-  toolbarMaxLabel: document.getElementById('toolbarMaxLabel'),
-  toolbarHintLabel: document.getElementById('toolbarHintLabel'),
-  toolbarToolButtons: document.querySelectorAll('.tool-btn'),
+  toolbarPanelBody: document.getElementById('toolbarPanelBody'),
+  toolbarCategoryButtons: document.querySelectorAll('[data-category]'),
 };
 
 function getActivePattern() {
@@ -112,85 +110,309 @@ function updateActivePattern(patch) {
   savePersistedState();
 }
 
+function getHighlightDisplayColor(pattern) {
+  return pattern.highlightEnabled ? pattern.highlightColor : 'transparent';
+}
+
+function setHighlightFromDisplayColor(color) {
+  if (color === 'transparent') {
+    updateActivePattern({
+      highlightEnabled: false,
+      highlightColor: DEFAULT_PATTERN.highlightColor
+    });
+  } else {
+    updateActivePattern({
+      highlightEnabled: true,
+      highlightColor: color
+    });
+  }
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 // ツールバーの設定
-const TOOLBAR_TOOL_CONFIG = {
-  fontSize: {
-    label: '文字サイズ',
-    min: 10,
-    max: 160,
-    step: 1,
-    hint: 'ドラッグして調整',
-    key: 'fontSize',
-    formatValue: (value) => String(value)
+const FONT_OPTIONS = [
+  {
+    value: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
+    label: '標準'
   },
-  opacity: {
-    label: '透明度',
-    min: 0,
-    max: 100,
-    step: 1,
-    hint: '透明 ← → はっきり',
-    key: 'opacity',
-    formatValue: (value) => `${value}%`
+  {
+    value: '"Hiragino Maru Gothic ProN", "Arial Rounded MT Bold", sans-serif',
+    label: '丸ゴ'
   },
-  outlineWidth: {
-    label: 'アウトライン太さ',
-    min: 0,
-    max: 40,
-    step: 1,
-    hint: 'なし ← → 太め',
-    key: 'outlineWidth',
-    formatValue: (value) => String(value)
+  {
+    value: '"Hiragino Sans", "Yu Gothic", Meiryo, sans-serif',
+    label: '日本語標準'
   },
-  highlightPadding: {
-    label: '背景帯の余白量',
-    min: 0,
-    max: 30,
-    step: 1,
-    hint: '狭い ← → 広い',
-    key: 'highlightPadding',
-    formatValue: (value) => String(value)
+  {
+    value: '"Arial Black", "Helvetica Neue", Arial, sans-serif',
+    label: 'インパクト'
   },
-  positionX: {
-    label: 'X座標',
-    min: -50,
-    max: 50,
-    step: 1,
-    hint: '左 ← → 右',
-    key: 'positionX',
-    formatValue: (value) => String(value)
+  {
+    value: '"Apple SD Gothic Neo", "Malgun Gothic", sans-serif',
+    label: '韓国語向け'
+  }
+];
+
+const HIGHLIGHT_COLOR_OPTIONS = [
+  '#ffe4f0',
+  '#ffffff',
+  '#fff2b8',
+  '#dff4ff',
+  '#efe6ff',
+  'transparent',
+  'custom'
+];
+
+const TOOLBAR_CATEGORY_CONFIG = {
+  font: {
+    label: 'フォント',
+    subtitle: '候補から1つ選択',
+    getValueText(pattern) {
+      const found = FONT_OPTIONS.find((item) => item.value === pattern.fontFamily);
+      return found ? found.label : '標準';
+    }
   },
-  positionY: {
-    label: 'Y座標',
-    min: -50,
-    max: 50,
-    step: 1,
-    hint: '下 ← → 上',
-    key: 'positionY',
-    formatValue: (value) => String(value)
+  size: {
+    label: 'サイズ',
+    subtitle: '文字サイズと太さを調整',
+    getValueText(pattern) {
+      return `${pattern.fontSize} / ${pattern.fontWeight}`;
+    }
+  },
+  highlight: {
+    label: 'ハイライト',
+    subtitle: '余白量と背景色を調整',
+    getValueText(pattern) {
+      return pattern.highlightEnabled ? 'ON' : 'OFF';
+    }
   }
 };
 
 function updateToolbarUI() {
-  const toolKey = state.activeToolbarTool;
-  const config = TOOLBAR_TOOL_CONFIG[toolKey];
+  const categoryKey = state.activeToolbarCategory;
+  const config = TOOLBAR_CATEGORY_CONFIG[categoryKey];
   if (!config) return;
 
   const pattern = getActivePattern();
-  const rawValue = pattern[config.key];
-  const value = Number(rawValue ?? DEFAULT_PATTERN[config.key] ?? 0);
 
   els.toolbarPanelTitle.textContent = config.label;
-  els.toolbarPanelValue.textContent = config.formatValue(value);
-  els.toolbarSlider.min = String(config.min);
-  els.toolbarSlider.max = String(config.max);
-  els.toolbarSlider.step = String(config.step);
-  els.toolbarSlider.value = String(value);
-  els.toolbarMinLabel.textContent = String(config.min);
-  els.toolbarMaxLabel.textContent = String(config.max);
-  els.toolbarHintLabel.textContent = config.hint;
+  els.toolbarPanelSubtitle.textContent = config.subtitle;
+  els.toolbarPanelValue.textContent = config.getValueText(pattern);
 
-  els.toolbarToolButtons.forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.tool === toolKey);
+  els.toolbarCategoryButtons.forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.category === categoryKey);
+  });
+
+  if (categoryKey === 'font') {
+    renderFontPanel(pattern);
+    return;
+  }
+
+  if (categoryKey === 'size') {
+    renderSizePanel(pattern);
+    return;
+  }
+
+  if (categoryKey === 'highlight') {
+    renderHighlightPanel(pattern);
+    return;
+  }
+
+  els.toolbarPanelBody.innerHTML = '';
+}
+
+function switchToolbarCategory(categoryKey) {
+  if (!TOOLBAR_CATEGORY_CONFIG[categoryKey]) return;
+  state.activeToolbarCategory = categoryKey;
+  updateToolbarUI();
+}
+
+// 各ツールのパネル内容をレンダリング
+function renderFontPanel(pattern) {
+  const chips = FONT_OPTIONS.map((item) => {
+    const active = item.value === pattern.fontFamily ? ' active' : '';
+    return `
+      <button class="font-chip${active}" type="button" data-font-family="${escapeHtml(item.value)}">
+        ${escapeHtml(item.label)}
+      </button>
+    `;
+  }).join('');
+
+  els.toolbarPanelBody.innerHTML = `
+    <div class="toolbar-section">
+      <div class="font-row">${chips}</div>
+    </div>
+  `;
+
+  els.toolbarPanelBody.querySelectorAll('[data-font-family]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      updateActivePattern({ fontFamily: btn.dataset.fontFamily });
+      if (hasSelectedImages()) {
+        schedulePreviewRerender();
+      } else {
+        renderSamplePreview();
+      }
+      updateToolbarUI();
+    });
+  });
+}
+
+function renderSizePanel(pattern) {
+  const sizeValue = Number(pattern.fontSize ?? DEFAULT_PATTERN.fontSize);
+  const weightValue = Number(pattern.fontWeight ?? DEFAULT_PATTERN.fontWeight);
+
+  els.toolbarPanelBody.innerHTML = `
+    <div class="toolbar-section">
+      <div class="control-block">
+        <div class="control-head">
+          <span class="control-label">文字サイズ</span>
+          <span class="control-value">${sizeValue}</span>
+        </div>
+        <input type="range" id="toolbarFontSizeSlider" min="10" max="160" step="1" value="${sizeValue}" />
+        <div class="slider-labels">
+          <span>10</span>
+          <span>ドラッグして調整</span>
+          <span>160</span>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <div class="control-head">
+          <span class="control-label">太さ</span>
+          <span class="control-value">${weightValue}</span>
+        </div>
+        <div class="segmented-row">
+          <button class="segment-btn${weightValue === 400 ? ' active' : ''}" type="button" data-font-weight="400">400</button>
+          <button class="segment-btn${weightValue === 700 ? ' active' : ''}" type="button" data-font-weight="700">700</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const slider = document.getElementById('toolbarFontSizeSlider');
+  slider.addEventListener('input', () => {
+    updateActivePattern({ fontSize: Number(slider.value) });
+    if (hasSelectedImages()) {
+      schedulePreviewRerender();
+    } else {
+      renderSamplePreview();
+    }
+    updateToolbarUI();
+  });
+
+  els.toolbarPanelBody.querySelectorAll('[data-font-weight]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      updateActivePattern({ fontWeight: Number(btn.dataset.fontWeight) });
+      if (hasSelectedImages()) {
+        schedulePreviewRerender();
+      } else {
+        renderSamplePreview();
+      }
+      updateToolbarUI();
+    });
+  });
+}
+
+function renderHighlightPanel(pattern) {
+  const paddingValue = Number(pattern.highlightPadding ?? DEFAULT_PATTERN.highlightPadding);
+  const displayColor = getHighlightDisplayColor(pattern);
+
+  const chips = HIGHLIGHT_COLOR_OPTIONS.map((color) => {
+    if (color === 'custom') {
+      return `
+        <button class="color-chip custom" type="button" data-highlight-color="custom">＋</button>
+      `;
+    }
+
+    const active = color === displayColor ? ' active' : '';
+    const extraClass = color === 'transparent' ? ' transparent' : '';
+    const style = color === 'transparent' ? '' : ` style="--chip:${escapeHtml(color)};"`;
+
+    return `
+      <button class="color-chip${extraClass}${active}" type="button" data-highlight-color="${escapeHtml(color)}"${style}></button>
+    `;
+  }).join('');
+
+  els.toolbarPanelBody.innerHTML = `
+    <div class="toolbar-section">
+      <div class="control-block">
+        <div class="control-head">
+          <span class="control-label">背景余白量</span>
+          <span class="control-value">${paddingValue}</span>
+        </div>
+        <input type="range" id="toolbarHighlightPaddingSlider" min="0" max="30" step="1" value="${paddingValue}" />
+        <div class="slider-labels">
+          <span>0</span>
+          <span>狭い ← → 広い</span>
+          <span>30</span>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <div class="control-head">
+          <span class="control-label">ハイライト色</span>
+          <span class="control-value">${displayColor === 'transparent' ? '透明' : '色あり'}</span>
+        </div>
+        <div class="color-palette">${chips}</div>
+        <div class="palette-note">透明を選ぶと、ハイライトなし設定を表現できます。</div>
+        <input type="color" id="toolbarHighlightCustomColor" value="${escapeHtml(pattern.highlightColor || DEFAULT_PATTERN.highlightColor)}" hidden />
+      </div>
+    </div>
+  `;
+
+  const slider = document.getElementById('toolbarHighlightPaddingSlider');
+  slider.addEventListener('input', () => {
+    updateActivePattern({ highlightPadding: Number(slider.value) });
+    if (hasSelectedImages()) {
+      schedulePreviewRerender();
+    } else {
+      renderSamplePreview();
+    }
+    updateToolbarUI();
+  });
+
+  const customColorInput = document.getElementById('toolbarHighlightCustomColor');
+
+  els.toolbarPanelBody.querySelectorAll('[data-highlight-color]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.highlightColor;
+
+      if (value === 'custom') {
+        customColorInput.click();
+        return;
+      }
+
+      setHighlightFromDisplayColor(value);
+
+      if (hasSelectedImages()) {
+        schedulePreviewRerender();
+      } else {
+        renderSamplePreview();
+      }
+      updateToolbarUI();
+    });
+  });
+
+  customColorInput.addEventListener('input', () => {
+    updateActivePattern({
+      highlightEnabled: true,
+      highlightColor: customColorInput.value
+    });
+
+    if (hasSelectedImages()) {
+      schedulePreviewRerender();
+    } else {
+      renderSamplePreview();
+    }
+    updateToolbarUI();
   });
 }
 
@@ -289,13 +511,9 @@ function getCurrentDraft() {
 function readFormToPartialPattern() {
   return {
     watermarkText: (els.watermarkText.value || '').trim() || DEFAULT_PATTERN.watermarkText,
-    fontWeight: Number(els.fontWeightInput.value) || DEFAULT_PATTERN.fontWeight,
-    fontFamily: els.fontFamilySelect.value || DEFAULT_PATTERN.fontFamily,
     lineHeight: els.lineHeightSelect.value || DEFAULT_PATTERN.lineHeight,
     textColor: els.textColorInput.value || DEFAULT_PATTERN.textColor,
     outlineColor: els.outlineColorInput.value || DEFAULT_PATTERN.outlineColor,
-    highlightEnabled: !!els.highlightEnabledInput.checked,
-    highlightColor: els.highlightColorInput.value || DEFAULT_PATTERN.highlightColor,
     postText: (els.postText.value || '').trim(),
     includeCurrentTime: !!els.includeCurrentTimeInput.checked
   };
@@ -312,13 +530,9 @@ function applyPatternToForm(pattern) {
   const p = { ...DEFAULT_PATTERN, ...(pattern || {}) };
 
   els.watermarkText.value = p.watermarkText;
-  els.fontWeightInput.value = p.fontWeight;
-  els.fontFamilySelect.value = p.fontFamily;
   els.lineHeightSelect.value = p.lineHeight;
   els.textColorInput.value = p.textColor;
   els.outlineColorInput.value = p.outlineColor;
-  els.highlightEnabledInput.checked = !!p.highlightEnabled;
-  els.highlightColorInput.value = p.highlightColor;
   els.postText.value = p.postText;
   els.includeCurrentTimeInput.checked = !!p.includeCurrentTime;
 }
@@ -515,7 +729,7 @@ function drawTextOnImage(img, text, style) {
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.miterLimit = 2;
-  
+
   const lineHeight = style.fontSize * style.lineHeight;
   const textWidths = lines.map((line) => ctx.measureText(line).width);
   const maxTextWidth = Math.max(...textWidths, 0);
@@ -877,23 +1091,17 @@ els.patternTabs.forEach((tab) => {
   });
 });
 
-els.toolbarSlider.addEventListener('input', handleToolbarSliderInput);
-
-els.toolbarToolButtons.forEach((btn) => {
+els.toolbarCategoryButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
-    switchToolbarTool(btn.dataset.tool);
+    switchToolbarCategory(btn.dataset.category);
   });
 });
 
 [
   els.watermarkText,
-  els.fontWeightInput,
-  els.fontFamilySelect,
   els.lineHeightSelect,
   els.textColorInput,
   els.outlineColorInput,
-  els.highlightEnabledInput,
-  els.highlightColorInput,
   els.includeCurrentTimeInput
 ].forEach((el) => {
   const eventName =

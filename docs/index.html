@@ -61,49 +61,30 @@
       <div class="toolbar-embed">
         <div class="dock-panel">
           <div class="panel-top">
-            <div class="panel-title" id="toolbarPanelTitle">文字サイズ</div>
-            <div class="panel-value" id="toolbarPanelValue">32</div>
+            <div class="panel-heading">
+              <div class="panel-title" id="toolbarPanelTitle">フォント</div>
+              <div class="panel-subtitle" id="toolbarPanelSubtitle">候補から1つ選択</div>
+            </div>
+            <div class="panel-value compact" id="toolbarPanelValue">標準</div>
           </div>
 
-          <div class="slider-wrap">
-            <input type="range" id="toolbarSlider" min="10" max="160" step="1" value="32" />
-            <div class="slider-labels">
-              <span id="toolbarMinLabel">10</span>
-              <span id="toolbarHintLabel">ドラッグして調整</span>
-              <span id="toolbarMaxLabel">160</span>
-            </div>
-          </div>
+          <div class="panel-body" id="toolbarPanelBody"></div>
         </div>
 
-        <div class="dock-tools">
-          <button class="tool-btn active" type="button" data-tool="fontSize">
+        <div class="dock-tools dock-tools-scroll" id="toolbarCategoryBar">
+          <button class="tool-btn active" type="button" data-category="font">
+            <span class="tool-icon font"></span>
+            <span class="tool-label">フォント</span>
+          </button>
+
+          <button class="tool-btn" type="button" data-category="size">
             <span class="tool-icon size"></span>
             <span class="tool-label">サイズ</span>
           </button>
 
-          <button class="tool-btn" type="button" data-tool="opacity">
-            <span class="tool-icon opacity"></span>
-            <span class="tool-label">透明度</span>
-          </button>
-
-          <button class="tool-btn" type="button" data-tool="outlineWidth">
-            <span class="tool-icon outline"></span>
-            <span class="tool-label">枠</span>
-          </button>
-
-          <button class="tool-btn" type="button" data-tool="highlightPadding">
-            <span class="tool-icon padding"></span>
-            <span class="tool-label">余白</span>
-          </button>
-
-          <button class="tool-btn" type="button" data-tool="positionX">
-            <span class="tool-icon move-x"></span>
-            <span class="tool-label">X</span>
-          </button>
-
-          <button class="tool-btn" type="button" data-tool="positionY">
-            <span class="tool-icon move-y"></span>
-            <span class="tool-label">Y</span>
+          <button class="tool-btn" type="button" data-category="highlight">
+            <span class="tool-icon highlight"></span>
+            <span class="tool-label">ハイライト</span>
           </button>
         </div>
       </div>
@@ -137,12 +118,12 @@
         <div class="row two-col-mobile">
           <div class="field">
             <label class="label" for="fontSizeInput">文字サイズ</label>
-            <input type="number" id="fontSizeInput" min="1" value="32" disabled/>
+            <input type="number" id="fontSizeInput" min="1" value="32" disabled />
           </div>
 
           <div class="field">
             <label class="label" for="fontWeightInput">文字の太さ</label>
-            <select id="fontWeightInput">
+            <select id="fontWeightInput" disabled>
               <option value="300">Light</option>
               <option value="500" selected>Medium</option>
               <option value="700">Bold</option>
@@ -167,12 +148,12 @@
 
           <div class="field">
             <label class="label" for="outlineWidthInput">アウトライン太さ</label>
-            <input type="number" id="outlineWidthInput" min="0" value="20" disabled/>
+            <input type="number" id="outlineWidthInput" min="0" value="20" disabled />
           </div>
 
           <div class="field">
             <label class="label" for="fontFamilySelect">フォント</label>
-            <select id="fontFamilySelect">
+            <select id="fontFamilySelect" disabled>
               <option value='-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif' selected>
                 標準
               </option>
@@ -208,7 +189,7 @@
 
         <div class="field">
           <label class="check">
-            <input type="checkbox" id="highlightEnabledInput" checked disabled/>
+            <input type="checkbox" id="highlightEnabledInput" checked disabled />
             ハイライトを表示する
           </label>
         </div>
@@ -216,11 +197,11 @@
         <div class="row two-col-mobile">
           <div class="field">
             <label class="label" for="highlightColorInput">ハイライト色</label>
-            <input type="color" id="highlightColorInput" value="#ffe4f0" />
+            <input type="color" id="highlightColorInput" value="#ffe4f0" disabled/>
           </div>
           <div class="field">
             <label class="label" for="highlightPaddingInput">背景帯の余白量</label>
-            <input type="number" id="highlightPaddingInput" value="8" disabled/>
+            <input type="number" id="highlightPaddingInput" value="8" disabled />
           </div>
         </div>
         <!-- 位置 -->
@@ -228,11 +209,11 @@
         <div class="row two-col-mobile">
           <div class="field">
             <label class="label" for="positionXInput">X座標（-50〜50）</label>
-            <input type="number" id="positionXInput" min="-50" max="50" value="0" disabled/>
+            <input type="number" id="positionXInput" min="-50" max="50" value="0" disabled />
           </div>
           <div class="field">
             <label class="label" for="positionYInput">Y座標（-50〜50）</label>
-            <input type="number" id="positionYInput" min="-50" max="50" value="0" disabled/>
+            <input type="number" id="positionYInput" min="-50" max="50" value="0" disabled />
           </div>
         </div>
 
