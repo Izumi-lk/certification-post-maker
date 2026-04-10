@@ -647,25 +647,37 @@ bt
 }
 
 .color-palette {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.color-palette::-webkit-scrollbar {
+  display: none;
 }
 
 .color-chip {
   appearance: none;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 12px;
-  border: 1px solid var(--border);
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  aspect-ratio: auto;
+  /* border-radius: 10px; */
+  border: none;
   background: var(--chip, #fff);
   cursor: pointer;
   position: relative;
+  margin: 0;
 }
 
 .color-chip.active {
   box-shadow: 0 0 0 2px var(--accent-strong) inset;
   border-color: var(--accent-strong);
+  z-index: 1;
 }
 
 .color-chip.transparent {
@@ -681,8 +693,25 @@ bt
   display: grid;
   place-items: center;
   background: #fff;
-  font-size: 20px;
+  font-size: 18px;
   color: var(--muted);
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+}
+
+.color-chip.active {
+  box-shadow: 0 0 0 2px var(--accent-strong) inset;
+  border-color: var(--accent-strong);
+}
+
+.color-chip.transparent {
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      #f7d7e3 0 6px,
+      #ffffff 6px 12px
+    );
 }
 
 .palette-note {
