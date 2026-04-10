@@ -181,13 +181,6 @@ function cacheElements() {
     previewMainImg: $('#previewMainImg'),
 
     watermarkText: $('#watermarkText'),
-    fontWeightInput: $('#fontWeightInput'),
-    fontFamilySelect: $('#fontFamilySelect'),
-    lineHeightSelect: $('#lineHeightSelect'),
-    textColorInput: $('#textColorInput'),
-    outlineColorInput: $('#outlineColorInput'),
-    highlightEnabledInput: $('#highlightEnabledInput'),
-    highlightColorInput: $('#highlightColorInput'),
     postText: $('#postText'),
     includeCurrentTimeInput: $('#includeCurrentTimeInput'),
     timePreview: $('#timePreview'),
@@ -1097,11 +1090,9 @@ function bindStaticEvents() {
 
   [
     $els.watermarkText,
-    $els.lineHeightSelect,
-    $els.textColorInput,
-    $els.outlineColorInput,
     $els.includeCurrentTimeInput
   ].forEach(($el) => {
+    if (!$el || $el.length === 0) return;
     const el = $el.get(0);
     const eventName =
       el.type === 'checkbox' || el.tagName === 'SELECT' || el.type === 'color'
