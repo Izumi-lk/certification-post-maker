@@ -15,19 +15,6 @@
       1〜4枚の画像をまとめて加工。設定パターンを切り替えながら、投稿文コピーと画像保存ができます。
     </div>
 
-    <!-- 設定パターン -->
-    <div class="card">
-      <div class="section-title">設定パターン</div>
-      <div class="pattern-tabs">
-        <button class="tab active" type="button" data-pattern="1">パターン1</button>
-        <button class="tab" type="button" data-pattern="2">パターン2</button>
-        <button class="tab" type="button" data-pattern="3">パターン3</button>
-      </div>
-      <button class="btn secondary" id="copyPostBtn" type="button">投稿文をコピーして新しいポストを開く</button>
-      <!-- ステータス表示はしない -->
-      <div class="status" id="settingsStatus" style="display: none;"></div>
-    </div>
-
     <!-- 画像アップロード -->
     <div class="card">
       <div class="section-title">画像アップロード</div>
@@ -37,6 +24,18 @@
         <input type="file" id="imageFiles" accept="image/*" multiple />
         <div class="hint">1〜4枚まで選択できます。選択したすべての画像に同じ設定を適用します。</div>
       </div>
+    </div>
+
+    <!-- 設定パターン -->
+    <div class="card">
+      <div class="section-title">設定パターン</div>
+      <div class="pattern-tabs">
+        <button class="tab active" type="button" data-pattern="1">パターン1</button>
+        <button class="tab" type="button" data-pattern="2">パターン2</button>
+        <button class="tab" type="button" data-pattern="3">パターン3</button>
+      </div>
+      <!-- ステータス表示はしない -->
+      <div class="status" id="settingsStatus" style="display: none;"></div>
     </div>
 
     <!-- プレビュー -->
@@ -60,7 +59,7 @@
 
       <div class="toolbar-embed">
         <div class="dock-panel">
-          <input type="color" id="toolbarTextColorCustomInput" hidden />
+          <input type="color" id="toolbarTextColorCustomInput" />
           <input type="color" id="toolbarOutlineColorCustomInput" hidden />
           <input type="color" id="toolbarHighlightColorCustomInput" hidden />
           <div class="panel-top">

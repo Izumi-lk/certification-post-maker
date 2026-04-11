@@ -313,7 +313,7 @@ textarea#postText {
   font-size: 15px;
   font-weight: 800;
 }
-bt
+
 .panel-value {
   font-size: 22px;
   font-weight: 800;
@@ -336,6 +336,12 @@ bt
   width: 100%;
   margin: 0;
   accent-color: var(--accent-strong);
+}
+
+#toolbarTextColorCustomInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .dock-tools {
