@@ -51,7 +51,7 @@ const HIGHLIGHT_COLOR_OPTIONS = [
   '#fff2b8',
   '#dff4ff',
   '#efe6ff',
-  '#c8ffd8', 
+  '#c8ffd8',
   'custom'
 ];
 
@@ -342,7 +342,7 @@ function renderTextColorPanel(pattern) {
 
   const chips = paletteColors.map((color) => {
     if (color === 'custom') {
-      return '<button class="color-chip custom" type="button" data-text-color="custom">＋</button>';
+      return '<label class="color-chip custom" for="toolbarTextColorCustomInput">＋</label>';
     }
 
     const active = normalizeColorValue(color) === normalizeColorValue(pattern.textColor) ? ' active' : '';
@@ -1270,7 +1270,13 @@ function bindDynamicToolbarEvents() {
     const value = $(this).data('text-color');
 
     if (value === 'custom') {
-      $els.toolbarTextColorCustomInput.val(getActivePattern().textColor || DEFAULT_PATTERN.textColor).trigger('click');
+      const color = getActivePattern().textColor || DEFAULT_PATTERN.textColor;
+
+      $els.toolbarTextColorCustomInput.val(color);
+
+      // labelを一瞬クリック（ユーザー操作扱いにする）
+      document.getElementById('textColorCustomTrigger').click();
+
       return;
     }
 
