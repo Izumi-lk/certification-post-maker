@@ -342,7 +342,7 @@ function renderTextColorPanel(pattern) {
 
   const chips = paletteColors.map((color) => {
     if (color === 'custom') {
-      return '<label class="color-chip custom" for="toolbarTextColorCustomInput">＋</label>';
+      return '<label class="color-chip custom" for="toolbarTextColorCustomInput" data-text-color="custom">＋</label>';
     }
 
     const active = normalizeColorValue(color) === normalizeColorValue(pattern.textColor) ? ' active' : '';
