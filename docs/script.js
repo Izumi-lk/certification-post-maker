@@ -1140,7 +1140,8 @@ function bindStaticEvents() {
     switchToolbarCategory($(this).data('category'));
   });
 
-  $els.toolbarTextColorCustomInput.on('change', function () {
+  $els.toolbarTextColorCustomInput.on('input change', function () {
+    alert(`text color changed: ${$(this).val()}`); // デバッグ用
     const value = $(this).val();
     addCustomPaletteColor('textColor', value);
     updateActivePattern({ textColor: value });
