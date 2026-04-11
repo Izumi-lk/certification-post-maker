@@ -338,6 +338,12 @@ bt
   accent-color: var(--accent-strong);
 }
 
+#toolbarTextColorCustomInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .dock-tools {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
