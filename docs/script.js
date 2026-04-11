@@ -171,6 +171,21 @@ const customPaletteState = {
   }
 };
 
+const colorPickerState = {
+  textColor: {
+    isOpen: false,
+    pendingValue: null
+  },
+  outlineColor: {
+    isOpen: false,
+    pendingValue: null
+  },
+  highlightColor: {
+    isOpen: false,
+    pendingValue: null
+  }
+};
+
 let rerenderTimer = null;
 let $els = {};
 
@@ -260,6 +275,119 @@ function setHighlightFromDisplayColor(color) {
     highlightEnabled: true,
     highlightColor: color
   });
+}
+
+function markColorPickerOpen(type, initialValue) {
+  colorPickerState[type].isOpen = true;
+  colorPickerState[type].pendingValue = initialValue || null;
+}
+
+function updateColorPickerPendingValue(type, value) {
+  if (!colorPickerState[type].isOpen) return;
+  colorPickerState[type].pendingValue = value;
+}
+
+function commitColorPickerValue(type) {
+  const picker = colorPickerState[type];
+  if (!picker.isOpen) return;
+
+  const value = picker.pendingValue;
+  picker.isOpen = false;
+  picker.pendingValue = null;
+
+  if (!value) return;
+
+  if (type === 'textColor') {
+    addCustomPaletteColor('textColor', value);
+    updateActivePattern({ textColor: value });
+
+    const $palette = $els.toolbarPanelBody.find('.color-palette');
+    const $customBtn = $palette.find('[data-text-color="custom"]');
+
+    $els.toolbarPanelBody.find('[data-text-color]').removeClass('active');
+
+    let $target = $palette.find(`[data-text-color="${value}"]`);
+
+    if ($target.length === 0 && $customBtn.length) {
+      $target = $(`
+        <button
+          class="color-chip active"
+          type="button"
+          data-text-color="${escapeHtml(value)}"
+          style="--chip:${escapeHtml(value)};"
+        ></button>
+      `);
+      $customBtn.before($target);
+    } else {
+      $target.addClass('active');
+    }
+
+    $('#toolbarTextColorValue').text(value);
+    updatePreviewAfterToolbarChange();
+    return;
+  }
+
+  if (type === 'outlineColor') {
+    addCustomPaletteColor('outlineColor', value);
+    updateActivePattern({ outlineColor: value });
+
+    const $palette = $els.toolbarPanelBody.find('.color-palette');
+    const $customBtn = $palette.find('[data-outline-color="custom"]');
+
+    $els.toolbarPanelBody.find('[data-outline-color]').removeClass('active');
+
+    let $target = $palette.find(`[data-outline-color="${value}"]`);
+
+    if ($target.length === 0 && $customBtn.length) {
+      $target = $(`
+        <button
+          class="color-chip active"
+          type="button"
+          data-outline-color="${escapeHtml(value)}"
+          style="--chip:${escapeHtml(value)};"
+        ></button>
+      `);
+      $customBtn.before($target);
+    } else {
+      $target.addClass('active');
+    }
+
+    $('#toolbarOutlineColorValue').text(value);
+    updatePreviewAfterToolbarChange();
+    return;
+  }
+
+  if (type === 'highlightColor') {
+    addCustomPaletteColor('highlightColor', value);
+    updateActivePattern({
+      highlightEnabled: true,
+      highlightColor: value
+    });
+
+    const $palette = $els.toolbarPanelBody.find('.color-palette');
+    const $customBtn = $palette.find('[data-highlight-color="custom"]');
+
+    $els.toolbarPanelBody.find('[data-highlight-color]').removeClass('active');
+
+    let $target = $palette.find(`[data-highlight-color="${value}"]`);
+
+    if ($target.length === 0 && $customBtn.length) {
+      $target = $(`
+        <button
+          class="color-chip active"
+          type="button"
+          data-highlight-color="${escapeHtml(value)}"
+          style="--chip:${escapeHtml(value)};"
+        ></button>
+      `);
+      $customBtn.before($target);
+    } else {
+      $target.addClass('active');
+    }
+
+    $('#toolbarHighlightColorValue').text('色あり');
+    updatePreviewAfterToolbarChange();
+  }
 }
 
 function normalizeColorValue(color) {
@@ -1140,40 +1268,22 @@ function bindStaticEvents() {
     switchToolbarCategory($(this).data('category'));
   });
 
-  $els.toolbarTextColorCustomInput.on('change', function () {
-    alert(`text color changed: ${$(this).val()}`); // デバッグ用
-    const value = $(this).val();
-    addCustomPaletteColor('textColor', value);
-    updateActivePattern({ textColor: value });
-    refreshToolbarHeader();
+  $els.toolbarTextColorCustomInput
+    .on('focus', function () {
+      markColorPickerOpen('textColor', $(this).val());
+    })
+    .on('input change', function () {
+      const value = $(this).val();
+      updateColorPickerPendingValue('textColor', value);
 
-    const $palette = $els.toolbarPanelBody.find('.color-palette');
-    const $customBtn = $palette.find('[data-text-color="custom"]');
-
-    // 既存activeを外す
-    $els.toolbarPanelBody.find('[data-text-color]').removeClass('active');
-
-    // すでに同じ色チップがあればそれをactive
-    let $target = $palette.find(`[data-text-color="${value}"]`);
-
-    // なければ custom の直前に追加
-    if ($target.length === 0 && $customBtn.length) {
-      $target = $(`
-      <button
-        class="color-chip active"
-        type="button"
-        data-text-color="${escapeHtml(value)}"
-        style="--chip:${escapeHtml(value)};"
-      ></button>
-    `);
-      $customBtn.before($target);
-    } else {
-      $target.addClass('active');
-    }
-
-    $('#toolbarTextColorValue').text(value);
-    updatePreviewAfterToolbarChange();
-  });
+      // 操作中の見た目だけ反映
+      updateActivePattern({ textColor: value });
+      $('#toolbarTextColorValue').text(value);
+      updatePreviewAfterToolbarChange();
+    })
+    .on('blur', function () {
+      commitColorPickerValue('textColor');
+    });
 
   $els.toolbarOutlineColorCustomInput.on('change', function () {
     const value = $(this).val();
@@ -1252,6 +1362,20 @@ function bindStaticEvents() {
         : 'input';
 
     $el.on(eventName, handleEditorValueChange);
+  });
+
+  $(window).on('focus', function () {
+    commitColorPickerValue('textColor');
+    //commitColorPickerValue('outlineColor');
+    //commitColorPickerValue('highlightColor');
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) {
+      commitColorPickerValue('textColor');
+      //commitColorPickerValue('outlineColor');
+      //commitColorPickerValue('highlightColor');
+    }
   });
 
   $els.postText.on('input', handlePostTextChange);
