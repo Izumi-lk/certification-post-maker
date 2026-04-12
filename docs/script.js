@@ -83,9 +83,9 @@ const COMMON_COLOR_OPTIONS = [
 ];
 
 const LINE_HEIGHT_OPTIONS = [
-  { value: '1.1', label: 's' },
-  { value: '1.5', label: 'm' },
-  { value: '1.9', label: 'l' }
+  { value: '1.1', label: 'S' },
+  { value: '1.5', label: 'M' },
+  { value: '1.9', label: 'L' }
 ];
 
 const TOOLBAR_CATEGORY_CONFIG = {
@@ -99,9 +99,10 @@ const TOOLBAR_CATEGORY_CONFIG = {
   },
   size: {
     label: 'サイズ',
-    subtitle: '文字サイズと太さを調整',
+    subtitle: '太さ・行間・サイズ・透明度を調整',
     getValueText(pattern) {
-      return `${pattern.fontSize} / ${pattern.fontWeight}`;
+      const weightLabel = Number(pattern.fontWeight) >= 700 ? '太字ON' : '太字OFF';
+      return `${pattern.fontSize} / ${weightLabel}`;
     }
   },
   outline: {
@@ -124,20 +125,6 @@ const TOOLBAR_CATEGORY_CONFIG = {
     subtitle: 'X座標とY座標を調整',
     getValueText(pattern) {
       return `X ${pattern.positionX} / Y ${pattern.positionY}`;
-    }
-  },
-  opacity: {
-    label: '透明度',
-    subtitle: '文字全体の透明度を調整',
-    getValueText(pattern) {
-      return `${pattern.opacity}%`;
-    }
-  },
-  lineHeight: {
-    label: '行間',
-    subtitle: '複数行テキストの間隔を調整',
-    getValueText(pattern) {
-      return String(pattern.lineHeight);
     }
   }
 };
@@ -316,24 +303,71 @@ function renderFontPanel(pattern) {
 
 function renderSizePanel(pattern) {
   const sizeValue = Number(pattern.fontSize ?? DEFAULT_PATTERN.fontSize);
-  const weightValue = Number(pattern.fontWeight ?? DEFAULT_PATTERN.fontWeight);
+  const weightEnabled = Number(pattern.fontWeight ?? DEFAULT_PATTERN.fontWeight) >= 700;
+  const rawLineHeightValue = String(pattern.lineHeight ?? DEFAULT_PATTERN.lineHeight);
+  const validLineHeightValues = LINE_HEIGHT_OPTIONS.map((item) => String(item.value));
+  const lineHeightValue = validLineHeightValues.includes(rawLineHeightValue)
+    ? rawLineHeightValue
+    : String(DEFAULT_PATTERN.lineHeight);
+  const opacityValue = Number(pattern.opacity ?? DEFAULT_PATTERN.opacity);
+
+  const lineHeightButtons = LINE_HEIGHT_OPTIONS.map((item, index) => `
+    <button
+      class="segment-btn segment-btn-joined${item.value === lineHeightValue ? ' active' : ''}${index === 0 ? ' first' : ''}${index === LINE_HEIGHT_OPTIONS.length - 1 ? ' last' : ''}"
+      type="button"
+      data-line-height="${item.value}"
+    >
+      ${item.label}
+    </button>
+  `).join('');
 
   $els.toolbarPanelBody.html(`
     <div class="toolbar-section">
-      <div class="control-head">
-        <span class="control-label">文字サイズ</span>
-        <span class="control-value" id="toolbarFontSizeValue">${sizeValue}</span>
-      </div>
-      <input type="range" id="toolbarFontSizeSlider" min="10" max="160" step="1" value="${sizeValue}" />
-      <div class="slider-labels"></div>
+      <div class="size-top-row">
+        <div class="control-block compact-control">
+          <div class="control-head control-head-single">
+            <span class="control-label">太さ</span>
+          </div>
+          <button
+            class="switch-btn switch-btn-only${weightEnabled ? ' active' : ''}"
+            type="button"
+            id="toolbarFontWeightSwitch"
+            aria-pressed="${weightEnabled ? 'true' : 'false'}"
+            aria-label="太字切り替え"
+            title="太字切り替え"
+          >
+            <span class="switch-track">
+              <span class="switch-thumb"></span>
+            </span>
+          </button>
+        </div>
 
-      <div class="control-head">
-        <span class="control-label">太さ</span>
-        <span class="control-value" id="toolbarFontWeightValue">${weightValue}</span>
+        <div class="control-block compact-control">
+          <div class="control-head control-head-single">
+            <span class="control-label">行間</span>
+          </div>
+          <div class="segmented-row-joined" id="toolbarLineHeightGroup">
+            ${lineHeightButtons}
+          </div>
+        </div>
       </div>
-      <div class="segmented-row">
-        <button class="segment-btn${weightValue === 400 ? ' active' : ''}" type="button" data-font-weight="400">400</button>
-        <button class="segment-btn${weightValue === 700 ? ' active' : ''}" type="button" data-font-weight="700">700</button>
+
+      <div class="control-block">
+        <div class="control-head">
+          <span class="control-label">サイズ</span>
+          <span class="control-value" id="toolbarFontSizeValue">${sizeValue}</span>
+        </div>
+        <input type="range" id="toolbarFontSizeSlider" min="10" max="160" step="1" value="${sizeValue}" />
+        <div class="slider-labels"></div>
+      </div>
+
+      <div class="control-block">
+        <div class="control-head">
+          <span class="control-label">透明度</span>
+          <span class="control-value" id="toolbarOpacityValue">${opacityValue}%</span>
+        </div>
+        <input type="range" id="toolbarOpacitySlider" min="0" max="100" step="1" value="${opacityValue}" />
+        <div class="slider-labels"></div>
       </div>
     </div>
   `);
@@ -437,41 +471,6 @@ function renderPositionPanel(pattern) {
   `);
 }
 
-function renderOpacityPanel(pattern) {
-  const value = Number(pattern.opacity ?? DEFAULT_PATTERN.opacity);
-
-  $els.toolbarPanelBody.html(`
-    <div class="toolbar-section">
-      <div class="control-head">
-        <span class="control-label">透明度</span>
-        <span class="control-value" id="toolbarOpacityValue">${value}%</span>
-      </div>
-      <input type="range" id="toolbarOpacitySlider" min="0" max="100" step="1" value="${value}" />
-      <div class="slider-labels"></div>
-    </div>
-  `);
-}
-
-function renderLineHeightPanel(pattern) {
-  const current = String(pattern.lineHeight ?? DEFAULT_PATTERN.lineHeight);
-
-  const buttons = LINE_HEIGHT_OPTIONS.map((item) => `
-    <button class="segment-btn${item.value === current ? ' active' : ''}" type="button" data-line-height="${item.value}">
-      ${item.label}
-    </button>
-  `).join('');
-
-  $els.toolbarPanelBody.html(`
-    <div class="toolbar-section">
-      <div class="control-head">
-        <span class="control-label">行間</span>
-        <span class="control-value" id="toolbarLineHeightValue">${current}</span>
-      </div>
-      <div class="segmented-row segmented-row-5">${buttons}</div>
-    </div>
-  `);
-}
-
 function renderToolbarCategory() {
   const categoryKey = state.activeToolbarCategory;
   const pattern = getActivePattern();
@@ -481,8 +480,6 @@ function renderToolbarCategory() {
   if (categoryKey === 'outline') return renderOutlinePanel(pattern);
   if (categoryKey === 'highlight') return renderHighlightPanel(pattern);
   if (categoryKey === 'position') return renderPositionPanel(pattern);
-  if (categoryKey === 'opacity') return renderOpacityPanel(pattern);
-  if (categoryKey === 'lineHeight') return renderLineHeightPanel(pattern);
 
   $els.toolbarPanelBody.empty();
 }
@@ -1179,13 +1176,33 @@ function bindDynamicToolbarEvents() {
     updatePreviewAfterToolbarChange();
   });
 
-  $els.toolbarPanelBody.on('click', '[data-font-weight]', function () {
-    const value = Number($(this).data('font-weight'));
-    updateActivePattern({ fontWeight: value });
+  $els.toolbarPanelBody.on('click', '#toolbarFontWeightSwitch', function () {
+    const currentWeight = Number(getActivePattern().fontWeight ?? DEFAULT_PATTERN.fontWeight);
+    const nextWeight = currentWeight >= 700 ? 400 : 700;
+    const isEnabled = nextWeight >= 700;
+
+    updateActivePattern({ fontWeight: nextWeight });
     refreshToolbarHeader();
-    $('#toolbarFontWeightValue').text(String(value));
-    $els.toolbarPanelBody.find('[data-font-weight]').removeClass('active');
+    $(this)
+      .toggleClass('active', isEnabled)
+      .attr('aria-pressed', isEnabled ? 'true' : 'false');
+    updatePreviewAfterToolbarChange();
+  });
+
+  $els.toolbarPanelBody.on('click', '[data-line-height]', function () {
+    const value = $(this).data('line-height');
+    updateActivePattern({ lineHeight: value });
+    refreshToolbarHeader();
+    $els.toolbarPanelBody.find('[data-line-height]').removeClass('active');
     $(this).addClass('active');
+    updatePreviewAfterToolbarChange();
+  });
+
+  $els.toolbarPanelBody.on('input', '#toolbarOpacitySlider', function () {
+    const value = Number($(this).val());
+    updateActivePattern({ opacity: value });
+    refreshToolbarHeader();
+    $('#toolbarOpacityValue').text(`${value}%`);
     updatePreviewAfterToolbarChange();
   });
 
@@ -1252,24 +1269,6 @@ function bindDynamicToolbarEvents() {
     updateActivePattern({ positionY: value });
     refreshToolbarHeader();
     $('#toolbarPositionYValue').text(String(value));
-    updatePreviewAfterToolbarChange();
-  });
-
-  $els.toolbarPanelBody.on('input', '#toolbarOpacitySlider', function () {
-    const value = Number($(this).val());
-    updateActivePattern({ opacity: value });
-    refreshToolbarHeader();
-    $('#toolbarOpacityValue').text(`${value}%`);
-    updatePreviewAfterToolbarChange();
-  });
-
-  $els.toolbarPanelBody.on('click', '[data-line-height]', function () {
-    const value = $(this).data('line-height');
-    updateActivePattern({ lineHeight: value });
-    refreshToolbarHeader();
-    $('#toolbarLineHeightValue').text(value);
-    $els.toolbarPanelBody.find('[data-line-height]').removeClass('active');
-    $(this).addClass('active');
     updatePreviewAfterToolbarChange();
   });
 }

@@ -15,7 +15,6 @@
       1〜4枚の画像をまとめて加工。設定パターンを切り替えながら、投稿文コピーと画像保存ができます。
     </div>
 
-    <!-- 画像アップロード -->
     <div class="card">
       <div class="section-title">画像アップロード</div>
 
@@ -26,7 +25,6 @@
       </div>
     </div>
 
-    <!-- 設定パターン -->
     <div class="card">
       <div class="section-title">設定パターン</div>
       <div class="pattern-tabs">
@@ -34,11 +32,9 @@
         <button class="tab" type="button" data-pattern="2">パターン2</button>
         <button class="tab" type="button" data-pattern="3">パターン3</button>
       </div>
-      <!-- ステータス表示はしない -->
       <div class="status" id="settingsStatus" style="display: none;"></div>
     </div>
 
-    <!-- プレビュー -->
     <div class="card">
       <div class="preview-topbar">
         <div class="section-title preview-title">プレビュー</div>
@@ -94,16 +90,6 @@
             <span class="tool-icon position"></span>
             <span class="tool-label">位置</span>
           </button>
-
-          <button class="tool-btn" type="button" data-category="opacity">
-            <span class="tool-icon opacity"></span>
-            <span class="tool-label">透明度</span>
-          </button>
-
-          <button class="tool-btn" type="button" data-category="lineHeight">
-            <span class="tool-icon line-height"></span>
-            <span class="tool-label">行間</span>
-          </button>
         </div>
       </div>
 
@@ -113,14 +99,12 @@
         </button>
       </div>
 
-      <!-- ウォーターマーク文字 -->
       <div class="field">
         <label class="label" for="watermarkText">ウォーターマーク文字（複数行可）</label>
         <textarea id="watermarkText">@inu_5122</textarea>
       </div>
       <button class="btn" id="savePatternBtn" type="button">編集内容を保存</button>
 
-      <!-- ステータス表示はしない -->
       <div class="status" id="generateStatus" style="display: none;"></div>
       <div class="status" id="resultStatus" style="display: none;"></div>
     </div>
