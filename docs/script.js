@@ -55,6 +55,20 @@ const HIGHLIGHT_COLOR_OPTIONS = [
   '#c8ffd8'
 ];
 
+const OUTLINE_COLOR_OPTIONS = [
+  'custom',
+  'transparent',
+  '#ffffff',
+  '#000000',
+  '#ff2b88',
+  '#ffe4f0',
+  '#fff2b8',
+  '#dff4ff',
+  '#efe6ff',
+  '#c8ffd8',
+  '#b9c6ff'
+];
+
 const COMMON_COLOR_OPTIONS = [
   'custom',
   '#ffffff',
@@ -65,31 +79,22 @@ const COMMON_COLOR_OPTIONS = [
   '#dff4ff',
   '#efe6ff',
   '#c8ffd8',
-  '#b9c6ff',
+  '#b9c6ff'
 ];
 
 const LINE_HEIGHT_OPTIONS = [
-  { value: '1', label: '1.0' },
-  { value: '1.25', label: '1.25' },
-  { value: '1.5', label: '1.5' },
-  { value: '1.75', label: '1.75' },
-  { value: '2', label: '2.0' }
+  { value: '1.1', label: 's' },
+  { value: '1.5', label: 'm' },
+  { value: '1.9', label: 'l' }
 ];
 
 const TOOLBAR_CATEGORY_CONFIG = {
   font: {
     label: 'フォント',
-    subtitle: '候補から1つ選択',
+    subtitle: 'フォントと文字色を調整',
     getValueText(pattern) {
       const found = FONT_OPTIONS.find((item) => item.value === pattern.fontFamily);
       return found ? found.label : '標準';
-    }
-  },
-  textColor: {
-    label: '文字色',
-    subtitle: 'パレットから文字色を選択',
-    getValueText(pattern) {
-      return pattern.textColor || DEFAULT_PATTERN.textColor;
     }
   },
   size: {
@@ -103,14 +108,15 @@ const TOOLBAR_CATEGORY_CONFIG = {
     label: 'アウトライン',
     subtitle: '太さと色を調整',
     getValueText(pattern) {
-      return `${pattern.outlineWidth} / ${pattern.outlineColor || DEFAULT_PATTERN.outlineColor}`;
+      const display = getColorCodeDisplay(pattern.outlineColor);
+      return display ? `${pattern.outlineWidth} / ${display}` : `${pattern.outlineWidth}`;
     }
   },
   highlight: {
     label: 'ハイライト',
     subtitle: '余白量と背景色を調整',
     getValueText(pattern) {
-      return getHighlightDisplayColor(pattern);
+      return getColorCodeDisplay(getHighlightDisplayColor(pattern));
     }
   },
   position: {
@@ -246,6 +252,10 @@ function normalizeColorValue(color) {
   return String(color || '').trim().toLowerCase();
 }
 
+function getColorCodeDisplay(color) {
+  return normalizeColorValue(color) === 'transparent' ? '' : String(color || '');
+}
+
 function getPaletteColors(type, defaults) {
   return defaults;
 }
@@ -274,14 +284,6 @@ function renderFontPanel(pattern) {
     `;
   }).join('');
 
-  $els.toolbarPanelBody.html(`
-    <div class="toolbar-section">
-      <div class="font-row">${chips}</div>
-    </div>
-  `);
-}
-
-function renderTextColorPanel(pattern) {
   const paletteColors = getPaletteColors('textColor', COMMON_COLOR_OPTIONS);
 
   const customChip = '<label class="color-chip custom" for="toolbarTextColorCustomInput" data-text-color="custom"></label>';
@@ -294,15 +296,20 @@ function renderTextColorPanel(pattern) {
     })
     .join('');
 
-  const chips = customChip + normalChips;
+  const colorValue = getColorCodeDisplay(pattern.textColor);
 
   $els.toolbarPanelBody.html(`
     <div class="toolbar-section">
       <div class="control-head">
-        <span class="control-label">文字色</span>
-        <span class="control-value" id="toolbarTextColorValue">${escapeHtml(pattern.textColor)}</span>
+        <span class="control-label">フォント</span>
       </div>
-      <div class="color-palette">${chips}</div>
+      <div class="font-row">${chips}</div>
+
+      <div class="control-head">
+        <span class="control-label">文字色</span>
+        <span class="control-value" id="toolbarTextColorValue">${escapeHtml(colorValue)}</span>
+      </div>
+      <div class="color-palette">${customChip + normalChips}</div>
     </div>
   `);
 }
@@ -333,7 +340,7 @@ function renderSizePanel(pattern) {
 }
 
 function renderOutlinePanel(pattern) {
-  const paletteColors = getPaletteColors('outlineColor', COMMON_COLOR_OPTIONS);
+  const paletteColors = getPaletteColors('outlineColor', OUTLINE_COLOR_OPTIONS);
 
   const customChip = '<button class="color-chip custom" type="button" data-outline-color="custom"></button>';
 
@@ -341,13 +348,16 @@ function renderOutlinePanel(pattern) {
     .filter((color) => color !== 'custom')
     .map((color) => {
       const active = normalizeColorValue(color) === normalizeColorValue(pattern.outlineColor) ? ' active' : '';
-      return `<button class="color-chip${active}" type="button" data-outline-color="${escapeHtml(color)}" style="--chip:${escapeHtml(color)};"></button>`;
+      const extraClass = color === 'transparent' ? ' transparent' : '';
+      const style = color === 'transparent' ? '' : ` style="--chip:${escapeHtml(color)};"`;
+
+      return `<button class="color-chip${extraClass}${active}" type="button" data-outline-color="${escapeHtml(color)}"${style}></button>`;
     })
     .join('');
 
   const chips = customChip + normalChips;
-
   const widthValue = Number(pattern.outlineWidth ?? DEFAULT_PATTERN.outlineWidth);
+  const outlineColorValue = getColorCodeDisplay(pattern.outlineColor);
 
   $els.toolbarPanelBody.html(`
     <div class="toolbar-section">
@@ -359,7 +369,7 @@ function renderOutlinePanel(pattern) {
       <div class="slider-labels"></div>
       <div class="control-head">
         <span class="control-label">カラー</span>
-        <span class="control-value" id="toolbarOutlineColorValue">${escapeHtml(pattern.outlineColor)}</span>
+        <span class="control-value" id="toolbarOutlineColorValue">${escapeHtml(outlineColorValue)}</span>
       </div>
       <div class="color-palette">${chips}</div>
     </div>
@@ -385,6 +395,7 @@ function renderHighlightPanel(pattern) {
     .join('');
 
   const chips = customChip + normalChips;
+  const highlightColorValue = getColorCodeDisplay(displayColor);
 
   $els.toolbarPanelBody.html(`
     <div class="toolbar-section">
@@ -396,7 +407,7 @@ function renderHighlightPanel(pattern) {
       <div class="slider-labels"></div>
       <div class="control-head">
         <span class="control-label">カラー</span>
-        <span class="control-value" id="toolbarHighlightColorValue">${escapeHtml(displayColor)}</span>
+        <span class="control-value" id="toolbarHighlightColorValue">${escapeHtml(highlightColorValue)}</span>
       </div>
       <div class="color-palette">${chips}</div>
     </div>
@@ -466,7 +477,6 @@ function renderToolbarCategory() {
   const pattern = getActivePattern();
 
   if (categoryKey === 'font') return renderFontPanel(pattern);
-  if (categoryKey === 'textColor') return renderTextColorPanel(pattern);
   if (categoryKey === 'size') return renderSizePanel(pattern);
   if (categoryKey === 'outline') return renderOutlinePanel(pattern);
   if (categoryKey === 'highlight') return renderHighlightPanel(pattern);
@@ -637,12 +647,17 @@ function loadPersistedState() {
       state.activePatternId = Number(saved.activePatternId) || 1;
     }
 
+    if (!TOOLBAR_CATEGORY_CONFIG[state.activeToolbarCategory]) {
+      state.activeToolbarCategory = 'font';
+    }
+
     applyPatternToForm(state.patterns[state.activePatternId]);
     updatePatternTabs();
     refreshTimePreview();
     updateToolbarUI();
   } catch (e) {
     state.activePatternId = 1;
+    state.activeToolbarCategory = 'font';
     state.patterns = {
       1: { ...DEFAULT_PATTERN },
       2: { ...DEFAULT_PATTERN },
@@ -1088,7 +1103,7 @@ function bindStaticEvents() {
     const value = $(this).val();
     updateActivePattern({ textColor: value });
     refreshToolbarHeader();
-    $('#toolbarTextColorValue').text(value);
+    $('#toolbarTextColorValue').text(getColorCodeDisplay(value));
     updatePreviewAfterToolbarChange();
   });
 
@@ -1096,7 +1111,7 @@ function bindStaticEvents() {
     const value = $(this).val();
     updateActivePattern({ outlineColor: value });
     refreshToolbarHeader();
-    $('#toolbarOutlineColorValue').text(value);
+    $('#toolbarOutlineColorValue').text(getColorCodeDisplay(value));
     updatePreviewAfterToolbarChange();
   });
 
@@ -1107,7 +1122,7 @@ function bindStaticEvents() {
       highlightColor: value
     });
     refreshToolbarHeader();
-    $('#toolbarHighlightColorValue').text(value);
+    $('#toolbarHighlightColorValue').text(getColorCodeDisplay(value));
     updatePreviewAfterToolbarChange();
   });
 
@@ -1150,7 +1165,7 @@ function bindDynamicToolbarEvents() {
 
     updateActivePattern({ textColor: value });
     refreshToolbarHeader();
-    $('#toolbarTextColorValue').text(value);
+    $('#toolbarTextColorValue').text(getColorCodeDisplay(value));
     $els.toolbarPanelBody.find('[data-text-color]').removeClass('active');
     $(this).addClass('active');
     updatePreviewAfterToolbarChange();
@@ -1193,7 +1208,7 @@ function bindDynamicToolbarEvents() {
 
     updateActivePattern({ outlineColor: value });
     refreshToolbarHeader();
-    $('#toolbarOutlineColorValue').text(value);
+    $('#toolbarOutlineColorValue').text(getColorCodeDisplay(value));
     $els.toolbarPanelBody.find('[data-outline-color]').removeClass('active');
     $(this).addClass('active');
     updatePreviewAfterToolbarChange();
@@ -1218,7 +1233,7 @@ function bindDynamicToolbarEvents() {
 
     setHighlightFromDisplayColor(value);
     refreshToolbarHeader();
-    $('#toolbarHighlightColorValue').text(value);
+    $('#toolbarHighlightColorValue').text(getColorCodeDisplay(value));
     $els.toolbarPanelBody.find('[data-highlight-color]').removeClass('active');
     $(this).addClass('active');
     updatePreviewAfterToolbarChange();
