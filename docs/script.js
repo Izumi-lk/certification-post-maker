@@ -45,17 +45,18 @@ const FONT_OPTIONS = [
 ];
 
 const HIGHLIGHT_COLOR_OPTIONS = [
+  'custom',
   'transparent',
   '#ffe4f0',
   '#ffffff',
   '#fff2b8',
   '#dff4ff',
   '#efe6ff',
-  '#c8ffd8',
-  'custom'
+  '#c8ffd8'
 ];
 
 const COMMON_COLOR_OPTIONS = [
+  'custom',
   '#ffffff',
   '#000000',
   '#ff2b88',
@@ -65,7 +66,6 @@ const COMMON_COLOR_OPTIONS = [
   '#efe6ff',
   '#c8ffd8',
   '#b9c6ff',
-  'custom'
 ];
 
 const LINE_HEIGHT_OPTIONS = [
@@ -103,14 +103,14 @@ const TOOLBAR_CATEGORY_CONFIG = {
     label: 'アウトライン',
     subtitle: '太さと色を調整',
     getValueText(pattern) {
-      return `${pattern.outlineWidth} / 色`;
+      return `${pattern.outlineWidth} / ${pattern.outlineColor || DEFAULT_PATTERN.outlineColor}`;
     }
   },
   highlight: {
     label: 'ハイライト',
     subtitle: '余白量と背景色を調整',
     getValueText(pattern) {
-      return pattern.highlightEnabled ? 'ON' : 'OFF';
+      return getHighlightDisplayColor(pattern);
     }
   },
   position: {
@@ -221,7 +221,6 @@ function updateActivePattern(patch) {
     ...state.patterns[state.activePatternId],
     ...patch
   };
-  //savePersistedState(); 保存ボタンを押したときのみ保存
 }
 
 function getHighlightDisplayColor(pattern) {
@@ -285,14 +284,17 @@ function renderFontPanel(pattern) {
 function renderTextColorPanel(pattern) {
   const paletteColors = getPaletteColors('textColor', COMMON_COLOR_OPTIONS);
 
-  const chips = paletteColors.map((color) => {
-    if (color === 'custom') {
-      return '<label class="color-chip custom" for="toolbarTextColorCustomInput" data-text-color="custom">＋</label>';
-    }
+  const customChip = '<label class="color-chip custom" for="toolbarTextColorCustomInput" data-text-color="custom"></label>';
 
-    const active = normalizeColorValue(color) === normalizeColorValue(pattern.textColor) ? ' active' : '';
-    return `<button class="color-chip${active}" type="button" data-text-color="${escapeHtml(color)}" style="--chip:${escapeHtml(color)};"></button>`;
-  }).join('');
+  const normalChips = paletteColors
+    .filter((color) => color !== 'custom')
+    .map((color) => {
+      const active = normalizeColorValue(color) === normalizeColorValue(pattern.textColor) ? ' active' : '';
+      return `<button class="color-chip${active}" type="button" data-text-color="${escapeHtml(color)}" style="--chip:${escapeHtml(color)};"></button>`;
+    })
+    .join('');
+
+  const chips = customChip + normalChips;
 
   $els.toolbarPanelBody.html(`
     <div class="toolbar-section">
@@ -333,14 +335,17 @@ function renderSizePanel(pattern) {
 function renderOutlinePanel(pattern) {
   const paletteColors = getPaletteColors('outlineColor', COMMON_COLOR_OPTIONS);
 
-  const chips = paletteColors.map((color) => {
-    if (color === 'custom') {
-      return '<button class="color-chip custom" type="button" data-outline-color="custom">＋</button>';
-    }
+  const customChip = '<button class="color-chip custom" type="button" data-outline-color="custom"></button>';
 
-    const active = normalizeColorValue(color) === normalizeColorValue(pattern.outlineColor) ? ' active' : '';
-    return `<button class="color-chip${active}" type="button" data-outline-color="${escapeHtml(color)}" style="--chip:${escapeHtml(color)};"></button>`;
-  }).join('');
+  const normalChips = paletteColors
+    .filter((color) => color !== 'custom')
+    .map((color) => {
+      const active = normalizeColorValue(color) === normalizeColorValue(pattern.outlineColor) ? ' active' : '';
+      return `<button class="color-chip${active}" type="button" data-outline-color="${escapeHtml(color)}" style="--chip:${escapeHtml(color)};"></button>`;
+    })
+    .join('');
+
+  const chips = customChip + normalChips;
 
   const widthValue = Number(pattern.outlineWidth ?? DEFAULT_PATTERN.outlineWidth);
 
@@ -352,6 +357,10 @@ function renderOutlinePanel(pattern) {
       </div>
       <input type="range" id="toolbarOutlineWidthSlider" min="0" max="40" step="1" value="${widthValue}" />
       <div class="slider-labels"></div>
+      <div class="control-head">
+        <span class="control-label">カラー</span>
+        <span class="control-value" id="toolbarOutlineColorValue">${escapeHtml(pattern.outlineColor)}</span>
+      </div>
       <div class="color-palette">${chips}</div>
     </div>
   `);
@@ -362,17 +371,20 @@ function renderHighlightPanel(pattern) {
   const displayColor = getHighlightDisplayColor(pattern);
   const paletteColors = getPaletteColors('highlightColor', HIGHLIGHT_COLOR_OPTIONS);
 
-  const chips = paletteColors.map((color) => {
-    if (color === 'custom') {
-      return '<button class="color-chip custom" type="button" data-highlight-color="custom">＋</button>';
-    }
+  const customChip = '<button class="color-chip custom" type="button" data-highlight-color="custom"></button>';
 
-    const active = normalizeColorValue(color) === normalizeColorValue(displayColor) ? ' active' : '';
-    const extraClass = color === 'transparent' ? ' transparent' : '';
-    const style = color === 'transparent' ? '' : ` style="--chip:${escapeHtml(color)};"`;
+  const normalChips = paletteColors
+    .filter((color) => color !== 'custom')
+    .map((color) => {
+      const active = normalizeColorValue(color) === normalizeColorValue(displayColor) ? ' active' : '';
+      const extraClass = color === 'transparent' ? ' transparent' : '';
+      const style = color === 'transparent' ? '' : ` style="--chip:${escapeHtml(color)};"`;
 
-    return `<button class="color-chip${extraClass}${active}" type="button" data-highlight-color="${escapeHtml(color)}"${style}></button>`;
-  }).join('');
+      return `<button class="color-chip${extraClass}${active}" type="button" data-highlight-color="${escapeHtml(color)}"${style}></button>`;
+    })
+    .join('');
+
+  const chips = customChip + normalChips;
 
   $els.toolbarPanelBody.html(`
     <div class="toolbar-section">
@@ -382,6 +394,10 @@ function renderHighlightPanel(pattern) {
       </div>
       <input type="range" id="toolbarHighlightPaddingSlider" min="0" max="30" step="1" value="${paddingValue}" />
       <div class="slider-labels"></div>
+      <div class="control-head">
+        <span class="control-label">カラー</span>
+        <span class="control-value" id="toolbarHighlightColorValue">${escapeHtml(displayColor)}</span>
+      </div>
       <div class="color-palette">${chips}</div>
     </div>
   `);
@@ -527,7 +543,6 @@ function persistCurrentEditorState() {
   const pattern = buildPatternFromUI();
   state.patterns[state.activePatternId] = { ...DEFAULT_PATTERN, ...pattern };
   state.drafts[state.activePatternId] = pattern.postText || '';
-  //savePersistedState();　保存ボタンを押したときのみ保存
 }
 
 function saveCurrentPattern() {
@@ -555,7 +570,6 @@ function switchPattern(patternId) {
   applyPatternToForm(state.patterns[nextId]);
   updatePatternTabs();
   updateToolbarUI();
-  //savePersistedState(); 保存ボタンを押したときのみ保存
   refreshTimePreview();
   setStatus($els.settingsStatus, `パターン${nextId}に切り替えました。`);
 
@@ -586,7 +600,6 @@ async function copyPostAndOpenX() {
   try {
     await navigator.clipboard.writeText(finalText);
   } catch (_) {
-    // 失敗してもXは開く
   }
 
   window.open(buildTweetUrl(finalText), '_blank', 'noopener');
@@ -1083,6 +1096,7 @@ function bindStaticEvents() {
     const value = $(this).val();
     updateActivePattern({ outlineColor: value });
     refreshToolbarHeader();
+    $('#toolbarOutlineColorValue').text(value);
     updatePreviewAfterToolbarChange();
   });
 
@@ -1093,7 +1107,7 @@ function bindStaticEvents() {
       highlightColor: value
     });
     refreshToolbarHeader();
-    $('#toolbarHighlightColorValue').text('色あり');
+    $('#toolbarHighlightColorValue').text(value);
     updatePreviewAfterToolbarChange();
   });
 
@@ -1129,11 +1143,8 @@ function bindDynamicToolbarEvents() {
 
     if (value === 'custom') {
       const color = getActivePattern().textColor || DEFAULT_PATTERN.textColor;
-
       $els.toolbarTextColorCustomInput.val(color);
-
       document.getElementById('textColorCustomTrigger').click();
-
       return;
     }
 
@@ -1175,12 +1186,14 @@ function bindDynamicToolbarEvents() {
     const value = $(this).data('outline-color');
 
     if (value === 'custom') {
-      $els.toolbarOutlineColorCustomInput.val(getActivePattern().outlineColor || DEFAULT_PATTERN.outlineColor).trigger('click');
+      const color = getActivePattern().outlineColor || DEFAULT_PATTERN.outlineColor;
+      $els.toolbarOutlineColorCustomInput.val(color).trigger('click');
       return;
     }
 
     updateActivePattern({ outlineColor: value });
     refreshToolbarHeader();
+    $('#toolbarOutlineColorValue').text(value);
     $els.toolbarPanelBody.find('[data-outline-color]').removeClass('active');
     $(this).addClass('active');
     updatePreviewAfterToolbarChange();
@@ -1198,12 +1211,14 @@ function bindDynamicToolbarEvents() {
     const value = $(this).data('highlight-color');
 
     if (value === 'custom') {
-      $els.toolbarHighlightColorCustomInput.val(getActivePattern().highlightColor || DEFAULT_PATTERN.highlightColor).trigger('click');
+      const color = getActivePattern().highlightColor || DEFAULT_PATTERN.highlightColor;
+      $els.toolbarHighlightColorCustomInput.val(color).trigger('click');
       return;
     }
 
     setHighlightFromDisplayColor(value);
     refreshToolbarHeader();
+    $('#toolbarHighlightColorValue').text(value);
     $els.toolbarPanelBody.find('[data-highlight-color]').removeClass('active');
     $(this).addClass('active');
     updatePreviewAfterToolbarChange();

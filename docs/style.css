@@ -138,7 +138,7 @@ textarea#postText {
   box-shadow: none;
 }
 
-.post-time-preview + textarea {
+.post-time-preview+textarea {
   border-top: none;
 }
 
@@ -695,36 +695,35 @@ textarea#postText {
 
 .color-chip.transparent {
   background:
-    repeating-linear-gradient(
+    linear-gradient(
       -45deg,
-      #f7d7e3 0 6px,
-      #ffffff 6px 12px
-    );
+      transparent 48%,
+      #ff4d4d 49%,
+      #ff4d4d 51%,
+      transparent 52%
+    ),
+    #ffffff;
 }
 
 .color-chip.custom {
-  display: grid;
-  place-items: center;
-  background: #fff;
-  font-size: 18px;
-  color: var(--muted);
+  display: block;
   flex: 0 0 38px;
   width: 38px;
   height: 38px;
-}
-
-.color-chip.active {
-  box-shadow: 0 0 0 2px var(--accent-strong) inset;
-  border-color: var(--accent-strong);
-}
-
-.color-chip.transparent {
+  margin-right: 8px;
   background:
-    repeating-linear-gradient(
-      -45deg,
-      #f7d7e3 0 6px,
-      #ffffff 6px 12px
-    );
+    radial-gradient(circle at center,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0.5) 30%,
+      rgba(255, 255, 255, 0) 75%),
+    conic-gradient(#ff4d4d 0deg,
+      #ff9a3c 60deg,
+      #ffd93c 120deg,
+      #6bdf6b 180deg,
+      #4dc3ff 240deg,
+      #6f6bff 300deg,
+      #d96bff 330deg,
+      #ff4d4d 360deg);
 }
 
 .palette-note {
