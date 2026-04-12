@@ -153,24 +153,6 @@ const state = {
   currentPreviewIndex: 0
 };
 
-const customPaletteState = {
-  1: {
-    textColor: [],
-    outlineColor: [],
-    highlightColor: []
-  },
-  2: {
-    textColor: [],
-    outlineColor: [],
-    highlightColor: []
-  },
-  3: {
-    textColor: [],
-    outlineColor: [],
-    highlightColor: []
-  }
-};
-
 let rerenderTimer = null;
 let $els = {};
 
@@ -228,8 +210,7 @@ function savePersistedState() {
   const payload = {
     activePatternId: state.activePatternId,
     patterns: state.patterns,
-    drafts: state.drafts,
-    customPalettes: customPaletteState
+    drafts: state.drafts
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
@@ -266,44 +247,8 @@ function normalizeColorValue(color) {
   return String(color || '').trim().toLowerCase();
 }
 
-function getActiveCustomPalette() {
-  const id = String(state.activePatternId);
-  if (!customPaletteState[id]) {
-    customPaletteState[id] = {
-      textColor: [],
-      outlineColor: [],
-      highlightColor: []
-    };
-  }
-  return customPaletteState[id];
-}
-
 function getPaletteColors(type, defaults) {
-  const activePalette = getActiveCustomPalette();
-  const customColors = activePalette[type] || [];
-  const baseColors = defaults.filter((color) => color !== 'custom');
-  return [...baseColors, ...customColors, 'custom'];
-}
-
-function addCustomPaletteColor(type, color) {
-  const normalized = normalizeColorValue(color);
-  if (!normalized || normalized === 'transparent' || normalized === 'custom') return;
-
-  const defaults =
-    type === 'highlightColor' ? HIGHLIGHT_COLOR_OPTIONS : COMMON_COLOR_OPTIONS;
-
-  const defaultSet = new Set(
-    defaults
-      .filter((item) => item !== 'custom')
-      .map((item) => normalizeColorValue(item))
-  );
-
-  if (defaultSet.has(normalized)) return;
-
-  const activePalette = getActiveCustomPalette();
-  const current = activePalette[type] || [];
-  const filtered = current.filter((item) => normalizeColorValue(item) !== normalized);
-  activePalette[type] = [...filtered, normalized];
+  return defaults;
 }
 
 function updatePatternTabs() {
@@ -679,17 +624,6 @@ function loadPersistedState() {
       state.activePatternId = Number(saved.activePatternId) || 1;
     }
 
-    if (saved && saved.customPalettes) {
-      ['1', '2', '3'].forEach((id) => {
-        const palette = saved.customPalettes[id] || saved.customPalettes[Number(id)] || {};
-        customPaletteState[id] = {
-          textColor: Array.isArray(palette.textColor) ? palette.textColor : [],
-          outlineColor: Array.isArray(palette.outlineColor) ? palette.outlineColor : [],
-          highlightColor: Array.isArray(palette.highlightColor) ? palette.highlightColor : []
-        };
-      });
-    }
-
     applyPatternToForm(state.patterns[state.activePatternId]);
     updatePatternTabs();
     refreshTimePreview();
@@ -706,9 +640,6 @@ function loadPersistedState() {
       2: null,
       3: null
     };
-    customPaletteState['1'] = { textColor: [], outlineColor: [], highlightColor: [] };
-    customPaletteState['2'] = { textColor: [], outlineColor: [], highlightColor: [] };
-    customPaletteState['3'] = { textColor: [], outlineColor: [], highlightColor: [] };
     applyPatternToForm(state.patterns[1]);
     updatePatternTabs();
     refreshTimePreview();
@@ -1141,101 +1072,27 @@ function bindStaticEvents() {
   });
 
   $els.toolbarTextColorCustomInput.on('change', function () {
-    alert(`text color changed: ${$(this).val()}`); // デバッグ用
     const value = $(this).val();
-    addCustomPaletteColor('textColor', value);
     updateActivePattern({ textColor: value });
     refreshToolbarHeader();
-
-    const $palette = $els.toolbarPanelBody.find('.color-palette');
-    const $customBtn = $palette.find('[data-text-color="custom"]');
-
-    // 既存activeを外す
-    $els.toolbarPanelBody.find('[data-text-color]').removeClass('active');
-
-    // すでに同じ色チップがあればそれをactive
-    let $target = $palette.find(`[data-text-color="${value}"]`);
-
-    // なければ custom の直前に追加
-    if ($target.length === 0 && $customBtn.length) {
-      $target = $(`
-      <button
-        class="color-chip active"
-        type="button"
-        data-text-color="${escapeHtml(value)}"
-        style="--chip:${escapeHtml(value)};"
-      ></button>
-    `);
-      $customBtn.before($target);
-    } else {
-      $target.addClass('active');
-    }
-
     $('#toolbarTextColorValue').text(value);
     updatePreviewAfterToolbarChange();
   });
 
   $els.toolbarOutlineColorCustomInput.on('change', function () {
     const value = $(this).val();
-    addCustomPaletteColor('outlineColor', value);
     updateActivePattern({ outlineColor: value });
     refreshToolbarHeader();
-
-    const $palette = $els.toolbarPanelBody.find('.color-palette');
-    const $customBtn = $palette.find('[data-outline-color="custom"]');
-
-    $els.toolbarPanelBody.find('[data-outline-color]').removeClass('active');
-
-    let $target = $palette.find(`[data-outline-color="${value}"]`);
-
-    if ($target.length === 0 && $customBtn.length) {
-      $target = $(`
-      <button
-        class="color-chip active"
-        type="button"
-        data-outline-color="${escapeHtml(value)}"
-        style="--chip:${escapeHtml(value)};"
-      ></button>
-    `);
-      $customBtn.before($target);
-    } else {
-      $target.addClass('active');
-    }
-
-    $('#toolbarOutlineColorValue').text(value);
     updatePreviewAfterToolbarChange();
   });
 
   $els.toolbarHighlightColorCustomInput.on('change', function () {
     const value = $(this).val();
-    addCustomPaletteColor('highlightColor', value);
     updateActivePattern({
       highlightEnabled: true,
       highlightColor: value
     });
     refreshToolbarHeader();
-
-    const $palette = $els.toolbarPanelBody.find('.color-palette');
-    const $customBtn = $palette.find('[data-highlight-color="custom"]');
-
-    $els.toolbarPanelBody.find('[data-highlight-color]').removeClass('active');
-
-    let $target = $palette.find(`[data-highlight-color="${value}"]`);
-
-    if ($target.length === 0 && $customBtn.length) {
-      $target = $(`
-      <button
-        class="color-chip active"
-        type="button"
-        data-highlight-color="${escapeHtml(value)}"
-        style="--chip:${escapeHtml(value)};"
-      ></button>
-    `);
-      $customBtn.before($target);
-    } else {
-      $target.addClass('active');
-    }
-
     $('#toolbarHighlightColorValue').text('色あり');
     updatePreviewAfterToolbarChange();
   });
@@ -1275,7 +1132,6 @@ function bindDynamicToolbarEvents() {
 
       $els.toolbarTextColorCustomInput.val(color);
 
-      // labelを一瞬クリック（ユーザー操作扱いにする）
       document.getElementById('textColorCustomTrigger').click();
 
       return;
