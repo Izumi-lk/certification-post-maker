@@ -337,7 +337,7 @@ textarea#postText {
   accent-color: var(--accent-strong);
 }
 
-#toolbarTextColorCustomInput {
+#toolbarTextColorCustomInput, #toolbarOutlineColorCustomInput, #toolbarHighlightColorCustomInput {
   position: absolute;
   width: 1px;
   height: 1px;
