@@ -337,19 +337,6 @@ textarea#postText {
   accent-color: var(--accent-strong);
 }
 
-#toolbarTextColorCustomInput, #toolbarOutlineColorCustomInput, #toolbarHighlightColorCustomInput {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  border: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .dock-tools {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -451,6 +438,19 @@ textarea#postText {
   font-weight: 700;
   line-height: 1.2;
   text-align: center;
+}
+
+#toolbarTextColorCustomInput, #toolbarOutlineColorCustomInput, #toolbarHighlightColorCustomInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 @media (max-width: 560px) {
