@@ -687,7 +687,8 @@ function getTimestampString() {
 }
 
 function buildTweetUrl(text) {
-  return `https://x.com/intent/tweet?text=${encodeURIComponent(text || '')}`;
+  //return `https://x.com/intent/tweet?text=${encodeURIComponent(text || '')}`;
+  return `https://x.com`;
 }
 
 function loadImageFromFile(file) {
