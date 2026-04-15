@@ -376,7 +376,7 @@ function renderSizePanel(pattern) {
 function renderOutlinePanel(pattern) {
   const paletteColors = getPaletteColors('outlineColor', OUTLINE_COLOR_OPTIONS);
 
-  const customChip = '<button class="color-chip custom" type="button" data-outline-color="custom"></button>';
+  const customChip = '<label class="color-chip custom" for="toolbarOutlineColorCustomInput" data-outline-color="custom"></label>';
 
   const normalChips = paletteColors
     .filter((color) => color !== 'custom')
@@ -415,7 +415,7 @@ function renderHighlightPanel(pattern) {
   const displayColor = getHighlightDisplayColor(pattern);
   const paletteColors = getPaletteColors('highlightColor', HIGHLIGHT_COLOR_OPTIONS);
 
-  const customChip = '<button class="color-chip custom" type="button" data-highlight-color="custom"></button>';
+  const customChip = '<label class="color-chip custom" for="toolbarHighlightColorCustomInput" data-highlight-color="custom"></label>';
 
   const normalChips = paletteColors
     .filter((color) => color !== 'custom')
@@ -1214,23 +1214,6 @@ function bindDynamicToolbarEvents() {
     updatePreviewAfterToolbarChange();
   });
 
-  $els.toolbarPanelBody.on('click', '[data-outline-color]', function () {
-    const value = $(this).data('outline-color');
-
-    if (value === 'custom') {
-      const color = getActivePattern().outlineColor || DEFAULT_PATTERN.outlineColor;
-      $els.toolbarOutlineColorCustomInput.val(color).trigger('click');
-      return;
-    }
-
-    updateActivePattern({ outlineColor: value });
-    refreshToolbarHeader();
-    $('#toolbarOutlineColorValue').text(getColorCodeDisplay(value));
-    $els.toolbarPanelBody.find('[data-outline-color]').removeClass('active');
-    $(this).addClass('active');
-    updatePreviewAfterToolbarChange();
-  });
-
   $els.toolbarPanelBody.on('input', '#toolbarHighlightPaddingSlider', function () {
     const value = Number($(this).val());
     updateActivePattern({ highlightPadding: value });
@@ -1239,22 +1222,41 @@ function bindDynamicToolbarEvents() {
     updatePreviewAfterToolbarChange();
   });
 
-  $els.toolbarPanelBody.on('click', '[data-highlight-color]', function () {
-    const value = $(this).data('highlight-color');
+$els.toolbarPanelBody.on('click', '[data-outline-color]', function () {
+  const value = $(this).data('outline-color');
 
-    if (value === 'custom') {
-      const color = getActivePattern().highlightColor || DEFAULT_PATTERN.highlightColor;
-      $els.toolbarHighlightColorCustomInput.val(color).trigger('click');
-      return;
-    }
+  if (value === 'custom') {
+    const color = getActivePattern().outlineColor || DEFAULT_PATTERN.outlineColor;
+    $els.toolbarOutlineColorCustomInput.val(color);
+    document.getElementById('outlineColorCustomTrigger').click();
+    return;
+  }
 
-    setHighlightFromDisplayColor(value);
-    refreshToolbarHeader();
-    $('#toolbarHighlightColorValue').text(getColorCodeDisplay(value));
-    $els.toolbarPanelBody.find('[data-highlight-color]').removeClass('active');
-    $(this).addClass('active');
-    updatePreviewAfterToolbarChange();
-  });
+  updateActivePattern({ outlineColor: value });
+  refreshToolbarHeader();
+  $('#toolbarOutlineColorValue').text(getColorCodeDisplay(value));
+  $els.toolbarPanelBody.find('[data-outline-color]').removeClass('active');
+  $(this).addClass('active');
+  updatePreviewAfterToolbarChange();
+});
+
+$els.toolbarPanelBody.on('click', '[data-highlight-color]', function () {
+  const value = $(this).data('highlight-color');
+
+  if (value === 'custom') {
+    const color = getActivePattern().highlightColor || DEFAULT_PATTERN.highlightColor;
+    $els.toolbarHighlightColorCustomInput.val(color);
+    document.getElementById('highlightColorCustomTrigger').click();
+    return;
+  }
+
+  setHighlightFromDisplayColor(value);
+  refreshToolbarHeader();
+  $('#toolbarHighlightColorValue').text(getColorCodeDisplay(value));
+  $els.toolbarPanelBody.find('[data-highlight-color]').removeClass('active');
+  $(this).addClass('active');
+  updatePreviewAfterToolbarChange();
+});
 
   $els.toolbarPanelBody.on('input', '#toolbarPositionXSlider', function () {
     const value = Number($(this).val());
