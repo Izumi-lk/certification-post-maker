@@ -271,6 +271,73 @@ function renderFontPanel(pattern) {
     `;
   }).join('');
 
+  const weightEnabled = Number(pattern.fontWeight ?? DEFAULT_PATTERN.fontWeight) >= 700;
+  const sizeValue = Number(pattern.fontSize ?? DEFAULT_PATTERN.fontSize);
+  const rawLineHeightValue = String(pattern.lineHeight ?? DEFAULT_PATTERN.lineHeight);
+  const validLineHeightValues = LINE_HEIGHT_OPTIONS.map((item) => String(item.value));
+  const lineHeightValue = validLineHeightValues.includes(rawLineHeightValue)
+    ? rawLineHeightValue
+    : String(DEFAULT_PATTERN.lineHeight);
+
+  const lineHeightButtons = LINE_HEIGHT_OPTIONS.map((item, index) => `
+    <button
+      class="segment-btn segment-btn-joined${item.value === lineHeightValue ? ' active' : ''}${index === 0 ? ' first' : ''}${index === LINE_HEIGHT_OPTIONS.length - 1 ? ' last' : ''}"
+      type="button"
+      data-line-height="${item.value}"
+    >
+      ${item.label}
+    </button>
+  `).join('');
+
+  $els.toolbarPanelBody.html(`
+    <div class="toolbar-section">
+      <!-- 1行目：フォント -->
+      <div class="control-head">
+        <span class="control-label">フォント</span>
+      </div>
+      <div class="font-row">${chips}</div>
+
+      <!-- 2行目：太さ・行間 -->
+      <div class="size-top-row">
+        <div class="control-block compact-control">
+          <div class="control-head control-head-single">
+            <span class="control-label">太さ</span>
+          </div>
+          <button
+            class="switch-btn switch-btn-only${weightEnabled ? ' active' : ''}"
+            type="button"
+            id="toolbarFontWeightSwitch"
+          >
+            <span class="switch-track">
+              <span class="switch-thumb"></span>
+            </span>
+          </button>
+        </div>
+
+        <div class="control-block compact-control">
+          <div class="control-head control-head-single">
+            <span class="control-label">行間</span>
+          </div>
+          <div class="segmented-row-joined">
+            ${lineHeightButtons}
+          </div>
+        </div>
+      </div>
+      <div class="control-block">
+        <div class="control-head">
+          <span class="control-label">サイズ</span>
+          <span class="control-value" id="toolbarFontSizeValue">${sizeValue}</span>
+        </div>
+        <input type="range" id="toolbarFontSizeSlider" min="10" max="160" step="1" value="${sizeValue}" />
+      </div>
+    </div>
+  `);
+}
+
+function renderSizePanel(pattern) {
+  
+  const opacityValue = Number(pattern.opacity ?? DEFAULT_PATTERN.opacity);
+
   const paletteColors = getPaletteColors('textColor', COMMON_COLOR_OPTIONS);
 
   const customChip = '<label class="color-chip custom" for="toolbarTextColorCustomInput" data-text-color="custom"></label>';
@@ -287,88 +354,21 @@ function renderFontPanel(pattern) {
 
   $els.toolbarPanelBody.html(`
     <div class="toolbar-section">
-      <div class="control-head">
-        <span class="control-label">フォント</span>
-      </div>
-      <div class="font-row">${chips}</div>
-
-      <div class="control-head">
-        <span class="control-label">文字色</span>
-        <span class="control-value" id="toolbarTextColorValue">${escapeHtml(colorValue)}</span>
-      </div>
-      <div class="color-palette">${customChip + normalChips}</div>
-    </div>
-  `);
-}
-
-function renderSizePanel(pattern) {
-  const sizeValue = Number(pattern.fontSize ?? DEFAULT_PATTERN.fontSize);
-  const weightEnabled = Number(pattern.fontWeight ?? DEFAULT_PATTERN.fontWeight) >= 700;
-  const rawLineHeightValue = String(pattern.lineHeight ?? DEFAULT_PATTERN.lineHeight);
-  const validLineHeightValues = LINE_HEIGHT_OPTIONS.map((item) => String(item.value));
-  const lineHeightValue = validLineHeightValues.includes(rawLineHeightValue)
-    ? rawLineHeightValue
-    : String(DEFAULT_PATTERN.lineHeight);
-  const opacityValue = Number(pattern.opacity ?? DEFAULT_PATTERN.opacity);
-
-  const lineHeightButtons = LINE_HEIGHT_OPTIONS.map((item, index) => `
-    <button
-      class="segment-btn segment-btn-joined${item.value === lineHeightValue ? ' active' : ''}${index === 0 ? ' first' : ''}${index === LINE_HEIGHT_OPTIONS.length - 1 ? ' last' : ''}"
-      type="button"
-      data-line-height="${item.value}"
-    >
-      ${item.label}
-    </button>
-  `).join('');
-
-  $els.toolbarPanelBody.html(`
-    <div class="toolbar-section">
-      <div class="size-top-row">
-        <div class="control-block compact-control">
-          <div class="control-head control-head-single">
-            <span class="control-label">太さ</span>
-          </div>
-          <button
-            class="switch-btn switch-btn-only${weightEnabled ? ' active' : ''}"
-            type="button"
-            id="toolbarFontWeightSwitch"
-            aria-pressed="${weightEnabled ? 'true' : 'false'}"
-            aria-label="太字切り替え"
-            title="太字切り替え"
-          >
-            <span class="switch-track">
-              <span class="switch-thumb"></span>
-            </span>
-          </button>
-        </div>
-
-        <div class="control-block compact-control">
-          <div class="control-head control-head-single">
-            <span class="control-label">行間</span>
-          </div>
-          <div class="segmented-row-joined" id="toolbarLineHeightGroup">
-            ${lineHeightButtons}
-          </div>
-        </div>
-      </div>
-
-      <div class="control-block">
-        <div class="control-head">
-          <span class="control-label">サイズ</span>
-          <span class="control-value" id="toolbarFontSizeValue">${sizeValue}</span>
-        </div>
-        <input type="range" id="toolbarFontSizeSlider" min="10" max="160" step="1" value="${sizeValue}" />
-        <div class="slider-labels"></div>
-      </div>
-
+      <!-- 2行目：透明度 -->
       <div class="control-block">
         <div class="control-head">
           <span class="control-label">透明度</span>
           <span class="control-value" id="toolbarOpacityValue">${opacityValue}%</span>
         </div>
         <input type="range" id="toolbarOpacitySlider" min="0" max="100" step="1" value="${opacityValue}" />
-        <div class="slider-labels"></div>
       </div>
+
+      <!-- 3行目：文字色 -->
+      <div class="control-head">
+        <span class="control-label">文字色</span>
+        <span class="control-value" id="toolbarTextColorValue">${escapeHtml(colorValue)}</span>
+      </div>
+      <div class="color-palette">${customChip + normalChips}</div>
     </div>
   `);
 }
@@ -1102,6 +1102,7 @@ function bindStaticEvents() {
     updateActivePattern({ textColor: value });
     refreshToolbarHeader();
     $('#toolbarTextColorValue').text(getColorCodeDisplay(value));
+    $els.toolbarPanelBody.find('[data-text-color]').removeClass('active');
     updatePreviewAfterToolbarChange();
   });
 
@@ -1110,6 +1111,7 @@ function bindStaticEvents() {
     updateActivePattern({ outlineColor: value });
     refreshToolbarHeader();
     $('#toolbarOutlineColorValue').text(getColorCodeDisplay(value));
+    $els.toolbarPanelBody.find('[data-outline-color]').removeClass('active');
     updatePreviewAfterToolbarChange();
   });
 
@@ -1121,6 +1123,7 @@ function bindStaticEvents() {
     });
     refreshToolbarHeader();
     $('#toolbarHighlightColorValue').text(getColorCodeDisplay(value));
+    $els.toolbarPanelBody.find('[data-highlight-color]').removeClass('active');
     updatePreviewAfterToolbarChange();
   });
 
@@ -1223,41 +1226,41 @@ function bindDynamicToolbarEvents() {
     updatePreviewAfterToolbarChange();
   });
 
-$els.toolbarPanelBody.on('click', '[data-outline-color]', function () {
-  const value = $(this).data('outline-color');
+  $els.toolbarPanelBody.on('click', '[data-outline-color]', function () {
+    const value = $(this).data('outline-color');
 
-  if (value === 'custom') {
-    const color = getActivePattern().outlineColor || DEFAULT_PATTERN.outlineColor;
-    $els.toolbarOutlineColorCustomInput.val(color);
-    document.getElementById('outlineColorCustomTrigger').click();
-    return;
-  }
+    if (value === 'custom') {
+      const color = getActivePattern().outlineColor || DEFAULT_PATTERN.outlineColor;
+      $els.toolbarOutlineColorCustomInput.val(color);
+      document.getElementById('outlineColorCustomTrigger').click();
+      return;
+    }
 
-  updateActivePattern({ outlineColor: value });
-  refreshToolbarHeader();
-  $('#toolbarOutlineColorValue').text(getColorCodeDisplay(value));
-  $els.toolbarPanelBody.find('[data-outline-color]').removeClass('active');
-  $(this).addClass('active');
-  updatePreviewAfterToolbarChange();
-});
+    updateActivePattern({ outlineColor: value });
+    refreshToolbarHeader();
+    $('#toolbarOutlineColorValue').text(getColorCodeDisplay(value));
+    $els.toolbarPanelBody.find('[data-outline-color]').removeClass('active');
+    $(this).addClass('active');
+    updatePreviewAfterToolbarChange();
+  });
 
-$els.toolbarPanelBody.on('click', '[data-highlight-color]', function () {
-  const value = $(this).data('highlight-color');
+  $els.toolbarPanelBody.on('click', '[data-highlight-color]', function () {
+    const value = $(this).data('highlight-color');
 
-  if (value === 'custom') {
-    const color = getActivePattern().highlightColor || DEFAULT_PATTERN.highlightColor;
-    $els.toolbarHighlightColorCustomInput.val(color);
-    document.getElementById('highlightColorCustomTrigger').click();
-    return;
-  }
+    if (value === 'custom') {
+      const color = getActivePattern().highlightColor || DEFAULT_PATTERN.highlightColor;
+      $els.toolbarHighlightColorCustomInput.val(color);
+      document.getElementById('highlightColorCustomTrigger').click();
+      return;
+    }
 
-  setHighlightFromDisplayColor(value);
-  refreshToolbarHeader();
-  $('#toolbarHighlightColorValue').text(getColorCodeDisplay(value));
-  $els.toolbarPanelBody.find('[data-highlight-color]').removeClass('active');
-  $(this).addClass('active');
-  updatePreviewAfterToolbarChange();
-});
+    setHighlightFromDisplayColor(value);
+    refreshToolbarHeader();
+    $('#toolbarHighlightColorValue').text(getColorCodeDisplay(value));
+    $els.toolbarPanelBody.find('[data-highlight-color]').removeClass('active');
+    $(this).addClass('active');
+    updatePreviewAfterToolbarChange();
+  });
 
   $els.toolbarPanelBody.on('input', '#toolbarPositionXSlider', function () {
     const value = Number($(this).val());
