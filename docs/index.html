@@ -113,9 +113,34 @@
       <div class="field">
         <label class="label" for="watermarkText">ウォーターマーク文字（複数行可）</label>
         <textarea id="watermarkText">@inu_5122</textarea>
+        <div class="watermark-template-row">
+          <div class="watermark-template-group">
+            <div class="mini-label">追加する要素</div>
+            <div class="watermark-chip-row">
+              <button class="template-chip active" id="watermarkIncludeDateBtn" type="button" aria-pressed="true">
+                ＋ 日付
+              </button>
+              <button class="template-chip" id="watermarkIncludeTimeBtn" type="button" aria-pressed="false">
+                ＋ 時刻
+              </button>
+            </div>
+          </div>
+
+          <div class="watermark-template-group watermark-position-group">
+            <div class="mini-label">配置</div>
+            <div class="template-segmented" id="watermarkPlacementSegment">
+              <button class="template-segment active" type="button" data-watermark-placement="prefix">前</button>
+              <button class="template-segment" type="button" data-watermark-placement="suffix">後</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="watermark-template-preview" hidden>
+          <div class="mini-label">プレビュー</div>
+          <div id="watermarkTemplatePreview" class="watermark-template-preview-text"></div>
+        </div>
       </div>
 
-      <!-- 投稿文 -->
       <div class="section-title subheading">投稿文</div>
       <div class="field">
         <label class="label" for="postText">本文・ハッシュタグ（自由入力）</label>

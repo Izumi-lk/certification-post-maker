@@ -1,5 +1,8 @@
 const DEFAULT_PATTERN = {
   watermarkText: '@sample',
+  watermarkIncludeDate: true,
+  watermarkIncludeTime: false,
+  watermarkDatePlacement: 'prefix',
   fontSize: 80,
   fontWeight: '400',
   fontFamily: '"Noto Sans JP", "Noto Sans KR"',
@@ -39,7 +42,7 @@ const FONT_OPTIONS = [
     label: 'インパクト'
   }
 ];
- 
+
 const FONT_PRELOAD_TARGETS = [
   '"Noto Sans JP"',
   '"Noto Sans KR"',
@@ -210,6 +213,11 @@ function cacheElements() {
     previewMainImg: $('#previewMainImg'),
 
     watermarkText: $('#watermarkText'),
+    watermarkIncludeDateBtn: $('#watermarkIncludeDateBtn'),
+    watermarkIncludeTimeBtn: $('#watermarkIncludeTimeBtn'),
+    watermarkPlacementSegment: $('#watermarkPlacementSegment'),
+    watermarkTemplatePreview: $('#watermarkTemplatePreview'),
+
     postText: $('#postText'),
     includeCurrentTimeInput: $('#includeCurrentTimeInput'),
     timePreview: $('#timePreview'),
@@ -295,6 +303,25 @@ function refreshToolbarHeader() {
   $els.toolbarCategoryButtons.each(function () {
     $(this).toggleClass('active', $(this).data('category') === categoryKey);
   });
+}
+
+function updateWatermarkTemplateUI() {
+  const pattern = getActivePattern();
+
+  $els.watermarkIncludeDateBtn
+    .toggleClass('active', !!pattern.watermarkIncludeDate)
+    .attr('aria-pressed', pattern.watermarkIncludeDate ? 'true' : 'false');
+
+  $els.watermarkIncludeTimeBtn
+    .toggleClass('active', !!pattern.watermarkIncludeTime)
+    .attr('aria-pressed', pattern.watermarkIncludeTime ? 'true' : 'false');
+
+  $els.watermarkPlacementSegment.find('[data-watermark-placement]').each(function () {
+    const placement = $(this).data('watermark-placement');
+    $(this).toggleClass('active', placement === pattern.watermarkDatePlacement);
+  });
+
+  refreshWatermarkTemplatePreview();
 }
 
 function renderFontPanel(pattern) {
@@ -532,19 +559,64 @@ function applyPatternToForm(pattern) {
   $els.watermarkText.val(p.watermarkText);
   $els.postText.val(p.postText);
   $els.includeCurrentTimeInput.prop('checked', !!p.includeCurrentTime);
+
+  updateActivePattern({
+    watermarkIncludeDate: !!p.watermarkIncludeDate,
+    watermarkIncludeTime: !!p.watermarkIncludeTime,
+    watermarkDatePlacement: p.watermarkDatePlacement === 'suffix' ? 'suffix' : 'prefix'
+  });
+
+  updateWatermarkTemplateUI();
 }
 
-function getCurrentTimeLabel() {
+function getCurrentDateLabel() {
   const now = new Date();
   const month = now.getMonth() + 1;
   const day = now.getDate();
+  return `${month}/${day}`;
+}
+
+function getCurrentTimeOnlyLabel() {
+  const now = new Date();
   const hour24 = now.getHours();
 
   const suffix = hour24 < 12 ? 'am' : 'pm';
   let hour12 = hour24 % 12;
   if (hour12 === 0) hour12 = 12;
 
-  return `${month}/${day} ${hour12}${suffix}`;
+  return `${hour12}${suffix}`;
+}
+
+function getCurrentTimeLabel() {
+  return `${getCurrentDateLabel()} ${getCurrentTimeOnlyLabel()}`;
+}
+
+function buildWatermarkText(pattern) {
+  const baseText = String(pattern.watermarkText || '').trim();
+  const parts = [];
+
+  if (pattern.watermarkIncludeDate) {
+    const dateText = getCurrentDateLabel();
+    const timeText = pattern.watermarkIncludeTime ? getCurrentTimeOnlyLabel() : '';
+    parts.push(timeText ? `${dateText} ${timeText}` : dateText);
+  }
+
+  const metaText = parts.join('\n').trim();
+
+  if (!metaText) return baseText;
+  if (!baseText) return metaText;
+
+  if (pattern.watermarkDatePlacement === 'suffix') {
+    return `${baseText}  ${metaText}`;
+  }
+
+  return `${metaText}  ${baseText}`;
+}
+
+function refreshWatermarkTemplatePreview() {
+  const pattern = buildPatternFromUI();
+  const previewText = buildWatermarkText(pattern);
+  $els.watermarkTemplatePreview.text(previewText || '');
 }
 
 function refreshTimePreview() {
@@ -562,8 +634,13 @@ function setStatus($target, text, isError = false) {
 }
 
 function readFormToPartialPattern() {
+  const activePattern = getActivePattern();
+
   return {
     watermarkText: ($els.watermarkText.val() || '').trim() || DEFAULT_PATTERN.watermarkText,
+    watermarkIncludeDate: !!activePattern.watermarkIncludeDate,
+    watermarkIncludeTime: !!activePattern.watermarkIncludeTime,
+    watermarkDatePlacement: activePattern.watermarkDatePlacement === 'suffix' ? 'suffix' : 'prefix',
     postText: ($els.postText.val() || '').trim(),
     includeCurrentTime: !!$els.includeCurrentTimeInput.prop('checked')
   };
@@ -580,6 +657,7 @@ function persistCurrentEditorState() {
   const pattern = buildPatternFromUI();
   state.patterns[state.activePatternId] = { ...DEFAULT_PATTERN, ...pattern };
   state.drafts[state.activePatternId] = pattern.postText || '';
+  refreshWatermarkTemplatePreview();
 }
 
 function saveCurrentPattern() {
@@ -588,6 +666,8 @@ function saveCurrentPattern() {
   state.drafts[state.activePatternId] = pattern.postText || '';
   savePersistedState();
   refreshTimePreview();
+  refreshWatermarkTemplatePreview();
+  updateWatermarkTemplateUI();
   updateToolbarUI();
   $els.settingsStatus.html('<span class="ok">このパターンを保存しました。</span>');
 }
@@ -608,6 +688,7 @@ function switchPattern(patternId) {
   updatePatternTabs();
   updateToolbarUI();
   refreshTimePreview();
+  refreshWatermarkTemplatePreview();
   setStatus($els.settingsStatus, `パターン${nextId}に切り替えました。`);
 
   if (hasSelectedImages()) {
@@ -649,6 +730,7 @@ function loadPersistedState() {
       applyPatternToForm(state.patterns[state.activePatternId]);
       updatePatternTabs();
       refreshTimePreview();
+      refreshWatermarkTemplatePreview();
       return;
     }
 
@@ -681,6 +763,7 @@ function loadPersistedState() {
     applyPatternToForm(state.patterns[state.activePatternId]);
     updatePatternTabs();
     refreshTimePreview();
+    refreshWatermarkTemplatePreview();
     updateToolbarUI();
   } catch (e) {
     state.activePatternId = 1;
@@ -698,6 +781,7 @@ function loadPersistedState() {
     applyPatternToForm(state.patterns[1]);
     updatePatternTabs();
     refreshTimePreview();
+    refreshWatermarkTemplatePreview();
     updateToolbarUI();
   }
 }
@@ -904,7 +988,7 @@ async function renderSamplePreview() {
     const pattern = buildPatternFromUI() || DEFAULT_PATTERN;
     const sampleImg = await loadImageFromUrl(SAMPLE_SRC);
     const renderStyle = patternToRenderStyle(pattern, sampleImg.width, sampleImg.height);
-    const dataUrl = drawTextOnImage(sampleImg, pattern.watermarkText, renderStyle);
+    const dataUrl = drawTextOnImage(sampleImg, buildWatermarkText(pattern), renderStyle);
 
     $els.previewFileName.text(SAMPLE_FILE_NAME);
     $els.previewMainImg.attr({ src: dataUrl, alt: '文字入りサンプル画像' });
@@ -976,7 +1060,8 @@ async function generateImages(options = {}) {
 
     state.images = loadedImages.map((img, index) => {
       const renderStyle = patternToRenderStyle(pattern, img.width, img.height);
-      const dataUrl = drawTextOnImage(img, pattern.watermarkText, renderStyle);
+      const watermarkText = buildWatermarkText(pattern);
+      const dataUrl = drawTextOnImage(img, watermarkText, renderStyle);
       const originalFile = files[index];
       const baseName = originalFile?.name
         ? originalFile.name.replace(/\.[^.]+$/, '')
@@ -1089,6 +1174,7 @@ async function handleImageFilesChange() {
 function handleEditorValueChange() {
   persistCurrentEditorState();
   refreshTimePreview();
+  refreshWatermarkTemplatePreview();
 
   if (hasSelectedImages()) {
     schedulePreviewRerender();
@@ -1128,6 +1214,38 @@ function bindStaticEvents() {
 
   $els.toolbarCategoryButtons.on('click', function () {
     switchToolbarCategory($(this).data('category'));
+  });
+
+  $els.watermarkIncludeDateBtn.on('click', function () {
+    const nextValue = !getActivePattern().watermarkIncludeDate;
+    updateActivePattern({ watermarkIncludeDate: nextValue });
+
+    if (!nextValue && getActivePattern().watermarkIncludeTime) {
+      updateActivePattern({ watermarkIncludeTime: false });
+    }
+
+    updateWatermarkTemplateUI();
+    handleEditorValueChange();
+  });
+
+  $els.watermarkIncludeTimeBtn.on('click', function () {
+    const currentPattern = getActivePattern();
+    const nextValue = !currentPattern.watermarkIncludeTime;
+
+    updateActivePattern({
+      watermarkIncludeTime: nextValue,
+      watermarkIncludeDate: nextValue ? true : currentPattern.watermarkIncludeDate
+    });
+
+    updateWatermarkTemplateUI();
+    handleEditorValueChange();
+  });
+
+  $els.watermarkPlacementSegment.on('click', '[data-watermark-placement]', function () {
+    const placement = $(this).data('watermark-placement') === 'suffix' ? 'suffix' : 'prefix';
+    updateActivePattern({ watermarkDatePlacement: placement });
+    updateWatermarkTemplateUI();
+    handleEditorValueChange();
   });
 
   $els.toolbarTextColorCustomInput.on('change', function () {
@@ -1321,6 +1439,7 @@ $(async function () {
   bindDynamicToolbarEvents();
   loadPersistedState();
   updateToolbarUI();
+  updateWatermarkTemplateUI();
   await ensureFontsReady();
   renderPreviewViewer();
 });
