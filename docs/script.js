@@ -2,7 +2,7 @@ const DEFAULT_PATTERN = {
   watermarkText: '@sample',
   fontSize: 80,
   fontWeight: '400',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
+  fontFamily: '"Noto Sans JP", "Noto Sans KR"',
   lineHeight: '1.5',
   textColor: '#ffffff',
   outlineColor: '#ff2b88',
@@ -23,25 +23,32 @@ const SAMPLE_SRC = './sample_light.png';
 
 const FONT_OPTIONS = [
   {
-    value: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
+    value: '"Noto Sans JP", "Noto Sans KR"',
     label: '標準'
   },
   {
-    value: '"Hiragino Maru Gothic ProN", "Arial Rounded MT Bold", sans-serif',
-    label: '丸ゴ'
+    value: '"M PLUS Rounded 1c", "Chiron GoRound TC"',
+    label: '丸ゴシック'
   },
   {
-    value: '"Hiragino Sans", "Yu Gothic", Meiryo, sans-serif',
-    label: '日本語標準'
+    value: '"Noto Serif KR", "Noto Serif JP"',
+    label: '明朝'
   },
   {
-    value: '"Arial Black", "Helvetica Neue", Arial, sans-serif',
+    value: '"Black Han Sans", "Dela Gothic One"',
     label: 'インパクト'
-  },
-  {
-    value: '"Apple SD Gothic Neo", "Malgun Gothic", sans-serif',
-    label: '韓国語向け'
   }
+];
+ 
+const FONT_PRELOAD_TARGETS = [
+  '"Noto Sans JP"',
+  '"Noto Sans KR"',
+  '"M PLUS Rounded 1c"',
+  '"Chiron GoRound TC"',
+  '"Dela Gothic One"',
+  '"Black Han Sans"',
+  '"Noto Serif JP"',
+  '"Noto Serif KR"'
 ];
 
 const HIGHLIGHT_COLOR_OPTIONS = [
@@ -148,6 +155,7 @@ const state = {
 
 let rerenderTimer = null;
 let $els = {};
+let fontReadyPromise = null;
 
 function escapeHtml(text) {
   return String(text)
@@ -156,6 +164,34 @@ function escapeHtml(text) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function normalizeFontFamily(fontFamily) {
+  const value = String(fontFamily || '').trim();
+  const found = FONT_OPTIONS.find((item) => item.value === value);
+  return found ? found.value : DEFAULT_PATTERN.fontFamily;
+}
+
+function ensureFontsReady() {
+  if (fontReadyPromise) return fontReadyPromise;
+
+  if (!document.fonts || typeof document.fonts.load !== 'function') {
+    fontReadyPromise = Promise.resolve();
+    return fontReadyPromise;
+  }
+
+  const loadRequests = [];
+
+  FONT_PRELOAD_TARGETS.forEach((fontFamily) => {
+    loadRequests.push(document.fonts.load(`400 16px ${fontFamily}`));
+    loadRequests.push(document.fonts.load(`700 16px ${fontFamily}`));
+  });
+
+  fontReadyPromise = Promise.all(loadRequests)
+    .then(() => document.fonts.ready)
+    .catch(() => Promise.resolve());
+
+  return fontReadyPromise;
 }
 
 function cacheElements() {
@@ -262,10 +298,12 @@ function refreshToolbarHeader() {
 }
 
 function renderFontPanel(pattern) {
-  const chips = FONT_OPTIONS.map((item) => {
-    const active = item.value === pattern.fontFamily ? ' active' : '';
+  const selectedFontFamily = normalizeFontFamily(pattern.fontFamily);
+
+  const chips = FONT_OPTIONS.map((item, index) => {
+    const active = item.value === selectedFontFamily ? ' active' : '';
     return `
-      <button class="font-chip${active}" type="button" data-font-family="${escapeHtml(item.value)}">
+      <button class="font-chip${active}" type="button" data-font-index="${index}">
         ${escapeHtml(item.label)}
       </button>
     `;
@@ -291,13 +329,11 @@ function renderFontPanel(pattern) {
 
   $els.toolbarPanelBody.html(`
     <div class="toolbar-section">
-      <!-- 1行目：フォント -->
       <div class="control-head">
         <span class="control-label">フォント</span>
       </div>
       <div class="font-row">${chips}</div>
 
-      <!-- 2行目：太さ・行間 -->
       <div class="size-top-row">
         <div class="control-block compact-control">
           <div class="control-head control-head-single">
@@ -323,6 +359,7 @@ function renderFontPanel(pattern) {
           </div>
         </div>
       </div>
+
       <div class="control-block">
         <div class="control-head">
           <span class="control-label">サイズ</span>
@@ -335,11 +372,8 @@ function renderFontPanel(pattern) {
 }
 
 function renderSizePanel(pattern) {
-  
   const opacityValue = Number(pattern.opacity ?? DEFAULT_PATTERN.opacity);
-
   const paletteColors = getPaletteColors('textColor', COMMON_COLOR_OPTIONS);
-
   const customChip = '<label class="color-chip custom" for="toolbarTextColorCustomInput" data-text-color="custom"></label>';
 
   const normalChips = paletteColors
@@ -354,7 +388,6 @@ function renderSizePanel(pattern) {
 
   $els.toolbarPanelBody.html(`
     <div class="toolbar-section">
-      <!-- 2行目：透明度 -->
       <div class="control-block">
         <div class="control-head">
           <span class="control-label">透明度</span>
@@ -363,7 +396,6 @@ function renderSizePanel(pattern) {
         <input type="range" id="toolbarOpacitySlider" min="0" max="100" step="1" value="${opacityValue}" />
       </div>
 
-      <!-- 3行目：文字色 -->
       <div class="control-head">
         <span class="control-label">文字色</span>
         <span class="control-value" id="toolbarTextColorValue">${escapeHtml(colorValue)}</span>
@@ -375,7 +407,6 @@ function renderSizePanel(pattern) {
 
 function renderOutlinePanel(pattern) {
   const paletteColors = getPaletteColors('outlineColor', OUTLINE_COLOR_OPTIONS);
-
   const customChip = '<label class="color-chip custom" for="toolbarOutlineColorCustomInput" data-outline-color="custom"></label>';
 
   const normalChips = paletteColors
@@ -414,7 +445,6 @@ function renderHighlightPanel(pattern) {
   const paddingValue = Number(pattern.highlightPadding ?? DEFAULT_PATTERN.highlightPadding);
   const displayColor = getHighlightDisplayColor(pattern);
   const paletteColors = getPaletteColors('highlightColor', HIGHLIGHT_COLOR_OPTIONS);
-
   const customChip = '<label class="color-chip custom" for="toolbarHighlightColorCustomInput" data-highlight-color="custom"></label>';
 
   const normalChips = paletteColors
@@ -687,7 +717,6 @@ function getTimestampString() {
 }
 
 function buildTweetUrl(text) {
-  //return `https://x.com/intent/tweet?text=${encodeURIComponent(text || '')}`;
   return `https://x.com`;
 }
 
@@ -823,7 +852,7 @@ function patternToRenderStyle(pattern, imageWidth, imageHeight) {
   return {
     fontSize: Number(pattern.fontSize) * scale,
     fontWeight: String(pattern.fontWeight),
-    fontFamily: pattern.fontFamily || '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
+    fontFamily: pattern.fontFamily || '"Noto Sans JP"',
     lineHeight: Number(pattern.lineHeight) || 1.5,
     fillStyle: pattern.textColor,
     strokeStyle: pattern.outlineColor,
@@ -870,6 +899,8 @@ function setButtonsDisabled(disabled) {
 
 async function renderSamplePreview() {
   try {
+    await ensureFontsReady();
+
     const pattern = buildPatternFromUI() || DEFAULT_PATTERN;
     const sampleImg = await loadImageFromUrl(SAMPLE_SRC);
     const renderStyle = patternToRenderStyle(pattern, sampleImg.width, sampleImg.height);
@@ -921,6 +952,8 @@ async function generateImages(options = {}) {
   const { preserveIndex = false, silentStatus = false } = options;
 
   try {
+    await ensureFontsReady();
+
     if (!silentStatus) {
       setStatus($els.generateStatus, '画像を生成中...');
       setStatus($els.resultStatus, '');
@@ -1145,11 +1178,14 @@ function bindStaticEvents() {
 }
 
 function bindDynamicToolbarEvents() {
-  $els.toolbarPanelBody.on('click', '[data-font-family]', function () {
-    const fontFamily = $(this).data('font-family');
-    updateActivePattern({ fontFamily });
+  $els.toolbarPanelBody.on('click', '[data-font-index]', function () {
+    const index = Number($(this).data('font-index'));
+    const option = FONT_OPTIONS[index];
+    if (!option) return;
+
+    updateActivePattern({ fontFamily: option.value });
     refreshToolbarHeader();
-    $els.toolbarPanelBody.find('[data-font-family]').removeClass('active');
+    $els.toolbarPanelBody.find('[data-font-index]').removeClass('active');
     $(this).addClass('active');
     updatePreviewAfterToolbarChange();
   });
@@ -1279,11 +1315,12 @@ function bindDynamicToolbarEvents() {
   });
 }
 
-$(function () {
+$(async function () {
   cacheElements();
   bindStaticEvents();
   bindDynamicToolbarEvents();
   loadPersistedState();
   updateToolbarUI();
+  await ensureFontsReady();
   renderPreviewViewer();
 });
