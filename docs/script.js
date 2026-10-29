@@ -21,6 +21,7 @@ const DEFAULT_PATTERN = {
 };
 
 const STORAGE_KEY = 'helper_patterns';
+const IMAGE_MODE_STORAGE_KEY = 'helper_image_mode';
 const SAMPLE_FILE_NAME = 'sample_light.png';
 const SAMPLE_SRC = './sample_light.png';
 
@@ -204,6 +205,7 @@ function cacheElements() {
     copyPostBtn: $('#copyPostBtn'),
 
     imageFiles: $('#imageFiles'),
+    imageMode: $('input[name="imageMode"]'),
     shareAllBtn: $('#shareAllBtn'),
     shareCurrentBtn: $('#shareCurrentBtn'),
 
@@ -250,6 +252,25 @@ function savePersistedState() {
     drafts: state.drafts
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+function restoreImageMode() {
+  try {
+    const storedMode = localStorage.getItem(IMAGE_MODE_STORAGE_KEY);
+    const mode = storedMode === 'sideBySide' ? 'sideBySide' : 'individual';
+    $els.imageMode.filter(`[value="${mode}"]`).prop('checked', true);
+  } catch (_) {
+    $els.imageMode.filter('[value="individual"]').prop('checked', true);
+  }
+}
+
+function saveImageMode() {
+  try {
+    const mode = $els.imageMode.filter(':checked').val();
+    localStorage.setItem(IMAGE_MODE_STORAGE_KEY, mode === 'sideBySide' ? 'sideBySide' : 'individual');
+  } catch (_) {
+    // Storage may be unavailable in private browsing or restricted environments.
+  }
 }
 
 function updateActivePattern(patch) {
@@ -857,6 +878,23 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
+function combineImagesHorizontally(images) {
+  const height = Math.max(...images.map(img => img.height));
+  const widths = images.map(img => Math.round(img.width * height / img.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = widths.reduce((sum, width) => sum + width, 0);
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  let x = 0;
+  images.forEach((img, index) => {
+    ctx.drawImage(img, x, 0, widths[index], height);
+    x += widths[index];
+  });
+  return canvas;
+}
+
 function drawTextOnImage(img, text, style) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -1048,22 +1086,24 @@ async function generateImages(options = {}) {
     const previousIndex = state.currentPreviewIndex;
     const files = Array.from(imageFilesInput()?.files || []);
 
-    if (files.length < 1 || files.length > 4) {
+    const sideBySide = $els.imageMode.filter(':checked').val() === 'sideBySide';
+    if (sideBySide ? files.length !== 2 : (files.length < 1 || files.length > 4)) {
       resetStateImages();
       renderPreviewViewer();
-      throw new Error('画像は1〜4枚選択してください。');
+      throw new Error(sideBySide ? '横に結合する画像を2枚選択してください。' : '画像は1〜4枚選択してください。');
     }
 
     const pattern = buildPatternFromUI() || DEFAULT_PATTERN;
     const loadedImages = await Promise.all(files.map((file) => loadImageFromFile(file)));
+    const renderImages = sideBySide ? [combineImagesHorizontally(loadedImages)] : loadedImages;
     const timestamp = getTimestampString();
 
-    state.images = loadedImages.map((img, index) => {
+    state.images = renderImages.map((img, index) => {
       const renderStyle = patternToRenderStyle(pattern, img.width, img.height);
       const watermarkText = buildWatermarkText(pattern);
       const dataUrl = drawTextOnImage(img, watermarkText, renderStyle);
       const originalFile = files[index];
-      const baseName = originalFile?.name
+      const baseName = sideBySide ? 'combined' : originalFile?.name
         ? originalFile.name.replace(/\.[^.]+$/, '')
         : `${index + 1}`;
       const fileName = escapeFileName(`${timestamp}_${baseName}.png`);
@@ -1197,6 +1237,10 @@ function updatePreviewAfterToolbarChange() {
 
 function bindStaticEvents() {
   $els.imageFiles.on('change', handleImageFilesChange);
+  $els.imageMode.on('change', () => {
+    saveImageMode();
+    if (hasSelectedImages()) generateImages();
+  });
   $els.imageFiles.on('click', function () {
     this.value = '';
   });
@@ -1438,6 +1482,7 @@ $(async function () {
   bindStaticEvents();
   bindDynamicToolbarEvents();
   loadPersistedState();
+  restoreImageMode();
   updateToolbarUI();
   updateWatermarkTemplateUI();
   await ensureFontsReady();

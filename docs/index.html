@@ -27,8 +27,12 @@
 
       <div class="field">
         <label class="label" for="imageFiles">画像アップロード</label>
+        <div class="image-mode-selector" role="group" aria-label="画像の加工方法">
+          <label><input type="radio" name="imageMode" value="individual" checked> 個別に加工</label>
+          <label><input type="radio" name="imageMode" value="sideBySide"> 2枚を横に結合</label>
+        </div>
         <input type="file" id="imageFiles" accept="image/*" multiple />
-        <div class="hint">1〜4枚まで選択できます。選択したすべての画像に同じ設定を適用します。</div>
+        <div class="hint">1〜4枚まで選択できます。横に結合モードでは2枚を選択してください。結合後に文字を重ねます。</div>
       </div>
     </div>
 

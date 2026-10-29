@@ -1108,3 +1108,6 @@ textarea:disabled {
     min-width: 0;
   }
 }
+.image-mode-selector {display:flex;flex-wrap:wrap;gap:10px;margin:0 0 12px;}
+.image-mode-selector label {display:flex;align-items:center;gap:5px;padding:9px 12px;border:1px solid var(--border);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;}
+.image-mode-selector input {accent-color:var(--accent-strong);}
